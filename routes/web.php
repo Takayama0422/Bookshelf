@@ -3,6 +3,7 @@
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GenreController;
+use App\Http\Controllers\RankingController;
 use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,4 +42,4 @@ Route::middleware('auth')->group(function () {
     Route::resource('genres', GenreController::class);
 });
 
-Route::get('/ranking', fn () => abort(501))->name('ranking.index');
+Route::get('/ranking', [RankingController::class, 'index'])->name('ranking.index');
