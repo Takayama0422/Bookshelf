@@ -16,3 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/books/create', function () {
+    abort(501);
+})->middleware('auth')->name('books.create');
