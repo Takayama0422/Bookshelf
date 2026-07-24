@@ -114,33 +114,155 @@ erDiagram
 
 ### 1. プロジェクト作成
 
+以下のDockerコマンドを実行して、Laravel 10.xを明示的に指定してプロジェクトを作成します。
+
 ```bash
-git clone https://github.com/Takayama0422/Bookshelf.git bookshelf-app
+docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php82-composer:latest composer create-project laravel/laravel:^10.0 bookshelf-app
+```
+
+プロジェクト作成後、`bookshelf-app` ディレクトリに移動し、Laravel Sailをインストールします。
+
+```bash
 cd bookshelf-app
-composer install
-npm install
+
+docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php82-composer:latest composer require laravel/sail --dev
+
+docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php82-composer:latest php artisan sail:install --with=mysql
+```
+
+M1/M2/M3 Mac（Apple Silicon）で `sail up -d` 実行時に `no matching manifest for linux/arm64/v8` エラーが発生した場合は、`compose.yaml` の `mysql` サービスに以下を追加してください。
+
+```yaml
+platform: 'linux/amd64'
 ```
 
 ### 2. `.env`設定
 
-```bash
-cp .env.example .env
-./vendor/bin/sail artisan key:generate
-```
-
-SailでMySQLへ接続するため、`.env` のDB設定を以下のように調整します。
+`.env` ファイルを開き、データベース接続情報が以下と一致していることを確認します。
 
 ```dotenv
-APP_NAME=BookShelf
-APP_URL=http://localhost
-
 DB_CONNECTION=mysql
 DB_HOST=mysql
 DB_PORT=3306
 DB_DATABASE=laravel
-DB_USERNAME=root
-DB_PASSWORD=
+DB_USERNAME=sail
+DB_PASSWORD=password
 ```
+
+`DB_HOST` は `localhost` や `127.0.0.1` ではなく、Dockerコンテナ名である `mysql` を指定します。
+
+### 3. Tailwind CSS・Alpine.jsのセットアップ
+
+本プロジェクトでは、フロントエンドのスタイリングにTailwind CSSを使用します。Sailコンテナを起動してから、以下を実行してください。起動していない場合は `./vendor/bin/sail up -d` を実行します。
+
+#### 3.1 NPM依存パッケージのインストール
+
+```bash
+sail npm install
+sail npm install alpinejs
+sail npm install -D tailwindcss@^3.4.0 @tailwindcss/forms postcss autoprefixer
+sail npx tailwindcss init -p
+```
+
+`@tailwindcss/forms` はフォーム要素のスタイルをリセットするLaravel標準プラグインです。
+
+#### 3.2 Tailwind CSSの設定
+
+`tailwind.config.js` を以下の内容で上書きしてください。
+
+```javascript
+import defaultTheme from 'tailwindcss/defaultTheme';
+import forms from '@tailwindcss/forms';
+
+/** @type {import('tailwindcss').Config} */
+export default {
+    content: [
+        './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
+        './storage/framework/views/*.php',
+        './resources/views/**/*.blade.php',
+    ],
+    theme: {
+        extend: {
+            fontFamily: {
+                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+            },
+        },
+    },
+    plugins: [forms],
+};
+```
+
+#### 3.3 Basicブランチのresourcesファイルを反映
+
+`coachtech-prepared-file/Preparedblade-mockcase-BookShelf` リポジトリの `Basic` ブランチから `resources` ファイルを取得し、本プロジェクトの `resources` ディレクトリと入れ替えます。
+
+#### 3.4 Vite開発サーバーの起動
+
+```bash
+sail npm run dev
+```
+
+開発中は常にこのコマンドを実行した状態にしてください。
+
+### 4. phpMyAdminの設定
+
+`compose.yaml` を開き、`mysql` サービスの後に以下の設定を追加してください。
+
+```yaml
+phpmyadmin:
+    image: 'phpmyadmin:latest'
+    ports:
+        - '${FORWARD_PHPMYADMIN_PORT:-8080}:80'
+    environment:
+        PMA_HOST: mysql
+        PMA_USER: '${DB_USERNAME}'
+        PMA_PASSWORD: '${DB_PASSWORD}'
+    networks:
+        - sail
+    depends_on:
+        - mysql
+```
+
+### 5. Sail起動
+
+```bash
+./vendor/bin/sail up -d
+
+echo "alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'" >> ~/.zshrc
+exec $SHELL
+```
+
+上記の `exec $SHELL` を実行するか、新しいターミナルを開いてエイリアスを有効にします。
+
+### 6. アプリケーションキー生成
+
+ルートディレクトリで以下のコマンドを実行します。
+
+```bash
+sail artisan key:generate
+```
+
+### 7. マイグレーション・Seeder実行
+
+以下のコマンドでテーブルを作成し、初期データを投入します。
+
+```bash
+sail artisan migrate --seed
+```
+
+既存のデータベースをリセットしたい場合は、以下を実行してください。
+
+```bash
+sail artisan migrate:fresh --seed
+```
+
+#### 日本語化（バリデーション・認証メッセージ）
+
+`config/app.php` の `locale` を `ja` にし、`lang/ja/` にメッセージファイルを手動配置して行います。
+
+`laravel-lang/lang` などの `laravel-lang/*` 系パッケージ（`composer require laravel-lang/...`）は導入しないでください。同系パッケージは2026年5月のサプライチェーン攻撃でマルウェア配布に悪用された経緯があります。
+
+### 8. ポート設定
 
 必要に応じて、アプリケーション、MySQL、phpMyAdmin、Viteのポートを `.env` で変更できます。
 
@@ -151,29 +273,12 @@ FORWARD_PHPMYADMIN_PORT=8080
 VITE_PORT=5173
 ```
 
-### 3. Sail起動
+### 9. 応用機能の環境拡張
 
-```bash
-./vendor/bin/sail up -d
-```
+基本機能の実装完了後、応用機能の画面に対応するBladeテンプレートを取得し、環境を拡張します。
 
-### 4. マイグレーション・Seeder実行
-
-```bash
-./vendor/bin/sail artisan migrate:fresh --seed
-```
-
-### 5. Vite起動
-
-```bash
-./vendor/bin/sail npm run dev
-```
-
-### 6. phpMyAdminの利用方法
-
-Sail起動後、ブラウザで `http://localhost:8080` を開きます。
-
-`compose.yaml` ではphpMyAdminの接続先が `mysql`、ユーザー名とパスワードが `.env` の `DB_USERNAME` と `DB_PASSWORD` に設定されています。
+1. `coachtech-prepared-file/Preparedblade-mockcase-BookShelf` リポジトリの `Advanced` ブランチから `resources` ファイルを再度インポートし、プロジェクトの `resources` ディレクトリを置き換えます。
+2. 応用版データモデルの変更を適用します。マイグレーションを書き直し、`sail artisan migrate:fresh --seed` で再構築してください。変更点の詳細はシート11・12を参照してください。
 
 ## 使用技術
 
