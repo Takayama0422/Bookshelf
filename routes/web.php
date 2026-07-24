@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\ReviewController;
 use Illuminate\Support\Facades\Route;
 
@@ -29,8 +30,8 @@ Route::middleware('auth')->group(function () {
 Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/favorites', fn () => abort(501))->name('favorites.index');
-    Route::post('/books/{book}/favorite', fn () => abort(501))->name('favorites.toggle');
+    Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
+    Route::post('/books/{book}/favorites', [FavoriteController::class, 'toggle'])->name('favorites.toggle');
     Route::post('/books/{book}/reviews', [ReviewController::class, 'store'])->name('reviews.store');
     Route::get('/reviews/{review}/edit', [ReviewController::class, 'edit'])->name('reviews.edit');
     Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('reviews.update');
