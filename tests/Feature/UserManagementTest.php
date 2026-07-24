@@ -49,6 +49,23 @@ class UserManagementTest extends TestCase
             ->assertSessionHasErrors('email');
     }
 
+    public function test_registration_rejects_invalid_email_format(): void
+    {
+        $this->from('/register')->post('/register', [
+            'name' => '山田 太郎',
+            'email' => 'invalid-email',
+            'password' => 'secret',
+            'password_confirmation' => 'secret',
+        ])->assertRedirect('/register')
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+        $this->assertDatabaseMissing('users', [
+            'name' => '山田 太郎',
+            'email' => 'invalid-email',
+        ]);
+    }
+
     public function test_registration_validation_errors_can_be_seen_in_japanese(): void
     {
         $response = $this->from('/register')->post('/register', [

@@ -153,6 +153,8 @@ class BookManagementTest extends TestCase
             ->assertSee('著者は必ず入力してください。')
             ->assertSee('ISBNは13桁で入力してください。')
             ->assertSee('出版日には本日以前の日付を指定してください。')
+            ->assertSee('説明は2000文字以内で入力してください。')
+            ->assertSee('ジャンルは1つ以上選択してください。')
             ->assertSee('画像URLには有効なURLを指定してください。');
     }
 
@@ -162,11 +164,14 @@ class BookManagementTest extends TestCase
         $genre = Genre::create(['name' => '文学']);
         $this->createBook(null, ['isbn' => '9784000000001'], [$genre->id]);
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->from('/books/create')
             ->post('/books', $this->validBookPayload(['genres' => [$genre->id]]))
             ->assertRedirect('/books/create')
             ->assertSessionHasErrors('isbn');
+
+        $this->followRedirects($response)
+            ->assertSee('このISBNはすでに登録されています。');
     }
 
     public function test_owners_can_view_book_edit_screen(): void

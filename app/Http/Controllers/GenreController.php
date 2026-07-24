@@ -25,7 +25,7 @@ class GenreController extends Controller
         $books = $genre->books()
             ->with('genres')
             ->latest('books.created_at')
-            ->paginate(9);
+            ->paginate(10);
 
         return view('genres.show', compact('genre', 'books'));
     }

@@ -47,6 +47,31 @@ class GenreManagementTest extends TestCase
             ->assertSee('Laravel実践');
     }
 
+    public function test_genre_detail_shows_ten_books_per_page(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::create(['name' => '技術書']);
+
+        foreach (range(1, 11) as $index) {
+            $this->createBook(null, [
+                'title' => 'ジャンル本'.$index,
+                'created_at' => now()->subMinutes($index),
+            ], [$genre->id]);
+        }
+
+        $this->actingAs($user)
+            ->get(route('genres.show', $genre))
+            ->assertOk()
+            ->assertSee('ジャンル本1')
+            ->assertSee('ジャンル本10')
+            ->assertDontSee('ジャンル本11');
+
+        $this->actingAs($user)
+            ->get(route('genres.show', ['genre' => $genre, 'page' => 2]))
+            ->assertOk()
+            ->assertSee('ジャンル本11');
+    }
+
     public function test_authenticated_users_can_create_genres(): void
     {
         $user = User::factory()->create();
@@ -66,17 +91,23 @@ class GenreManagementTest extends TestCase
         $user = User::factory()->create();
         Genre::create(['name' => '文学']);
 
-        $this->actingAs($user)
+        $duplicateResponse = $this->actingAs($user)
             ->from(route('genres.create'))
             ->post(route('genres.store'), ['name' => '文学'])
             ->assertRedirect(route('genres.create'))
             ->assertSessionHasErrors('name');
 
-        $this->actingAs($user)
+        $this->followRedirects($duplicateResponse)
+            ->assertSee('このジャンル名はすでに登録されています。');
+
+        $tooLongResponse = $this->actingAs($user)
             ->from(route('genres.create'))
             ->post(route('genres.store'), ['name' => str_repeat('あ', 51)])
             ->assertRedirect(route('genres.create'))
             ->assertSessionHasErrors('name');
+
+        $this->followRedirects($tooLongResponse)
+            ->assertSee('ジャンル名は50文字以内で入力してください。');
     }
 
     public function test_authenticated_users_can_update_genres(): void
@@ -106,11 +137,14 @@ class GenreManagementTest extends TestCase
             ->assertRedirect(route('genres.show', $genre))
             ->assertSessionHasNoErrors();
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->from(route('genres.edit', $genre))
             ->put(route('genres.update', $genre), ['name' => '技術書'])
             ->assertRedirect(route('genres.edit', $genre))
             ->assertSessionHasErrors('name');
+
+        $this->followRedirects($response)
+            ->assertSee('このジャンル名はすでに登録されています。');
     }
 
     public function test_unused_genres_can_be_deleted(): void

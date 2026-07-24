@@ -44,6 +44,35 @@ class UpdateBookRequest extends FormRequest
     }
 
     /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'タイトルは必ず入力してください。',
+            'title.string' => 'タイトルは文字列で入力してください。',
+            'title.max' => 'タイトルは255文字以内で入力してください。',
+            'author.required' => '著者は必ず入力してください。',
+            'author.string' => '著者は文字列で入力してください。',
+            'author.max' => '著者は255文字以内で入力してください。',
+            'isbn.required' => 'ISBNは必ず入力してください。',
+            'isbn.digits' => 'ISBNは13桁で入力してください。',
+            'isbn.unique' => 'このISBNはすでに登録されています。',
+            'published_date.required' => '出版日は必ず入力してください。',
+            'published_date.date' => '出版日には有効な日付を指定してください。',
+            'published_date.before_or_equal' => '出版日には本日以前の日付を指定してください。',
+            'description.string' => '説明は文字列で入力してください。',
+            'description.max' => '説明は2000文字以内で入力してください。',
+            'image_url.url' => '画像URLには有効なURLを指定してください。',
+            'image_url.max' => '画像URLは2048文字以内で入力してください。',
+            'genres.required' => 'ジャンルは1つ以上選択してください。',
+            'genres.array' => 'ジャンルは配列で指定してください。',
+            'genres.min' => 'ジャンルは1つ以上選択してください。',
+            'genres.*.exists' => '指定されたジャンルは存在しません。',
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function bookAttributes(): array
