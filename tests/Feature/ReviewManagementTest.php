@@ -202,6 +202,116 @@ class ReviewManagementTest extends TestCase
         $this->assertDatabaseMissing('review_likes', ['review_id' => $review->id]);
     }
 
+    public function test_authenticated_users_can_like_reviews(): void
+    {
+        $user = User::factory()->create();
+        $review = $this->createReview();
+
+        $this->actingAs($user)
+            ->post(route('reviews.like', $review))
+            ->assertRedirect(route('books.show', $review->book));
+
+        $this->assertDatabaseHas('review_likes', [
+            'user_id' => $user->id,
+            'review_id' => $review->id,
+        ]);
+    }
+
+    public function test_registered_review_likes_can_be_removed(): void
+    {
+        $user = User::factory()->create();
+        $review = $this->createReview();
+        $this->createReviewLike($user, $review);
+
+        $this->actingAs($user)
+            ->post(route('reviews.like', $review))
+            ->assertRedirect(route('books.show', $review->book));
+
+        $this->assertDatabaseMissing('review_likes', [
+            'user_id' => $user->id,
+            'review_id' => $review->id,
+        ]);
+    }
+
+    public function test_review_like_toggle_adds_when_missing_and_removes_when_registered(): void
+    {
+        $user = User::factory()->create();
+        $review = $this->createReview();
+
+        $this->actingAs($user)->post(route('reviews.like', $review));
+
+        $this->assertDatabaseHas('review_likes', [
+            'user_id' => $user->id,
+            'review_id' => $review->id,
+        ]);
+
+        $this->actingAs($user)->post(route('reviews.like', $review));
+
+        $this->assertDatabaseMissing('review_likes', [
+            'user_id' => $user->id,
+            'review_id' => $review->id,
+        ]);
+    }
+
+    public function test_duplicate_review_likes_for_the_same_user_and_review_are_prevented(): void
+    {
+        $user = User::factory()->create();
+        $review = $this->createReview();
+        $this->createReviewLike($user, $review);
+
+        $this->actingAs($user)
+            ->post(route('reviews.like', $review))
+            ->assertRedirect(route('books.show', $review->book));
+
+        $this->assertSame(0, ReviewLike::where('user_id', $user->id)->where('review_id', $review->id)->count());
+
+        $this->actingAs($user)->post(route('reviews.like', $review));
+        $this->actingAs($user)->post(route('reviews.like', $review));
+        $this->actingAs($user)->post(route('reviews.like', $review));
+
+        $this->assertSame(1, ReviewLike::where('user_id', $user->id)->where('review_id', $review->id)->count());
+    }
+
+    public function test_guests_are_redirected_to_login_when_liking_reviews(): void
+    {
+        $review = $this->createReview();
+
+        $this->post(route('reviews.like', $review))
+            ->assertRedirect('/login');
+    }
+
+    public function test_review_like_returns_404_for_missing_reviews(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->post('/reviews/999999/like')
+            ->assertNotFound();
+    }
+
+    public function test_review_like_uses_the_specified_uri_and_redirects_to_book_detail(): void
+    {
+        $user = User::factory()->create();
+        $review = $this->createReview();
+
+        $this->assertSame("/reviews/{$review->id}/like", route('reviews.like', $review, false));
+
+        $this->actingAs($user)
+            ->post("/reviews/{$review->id}/like")
+            ->assertRedirect(route('books.show', $review->book));
+    }
+
+    public function test_book_detail_displays_review_like_state_and_count(): void
+    {
+        $user = User::factory()->create();
+        $review = $this->createReview();
+        $this->createReviewLike($user, $review);
+        $this->createReviewLike(User::factory()->create(), $review);
+
+        $this->actingAs($user)
+            ->get(route('books.show', $review->book))
+            ->assertOk()
+            ->assertSee('いいね済み (2)');
+    }
+
     public function test_review_update_validation_keeps_old_input(): void
     {
         $user = User::factory()->create();
@@ -267,5 +377,14 @@ class ReviewManagementTest extends TestCase
             'rating' => 4,
             'comment' => '元のレビューです。',
         ], $overrides));
+    }
+
+    private function createReviewLike(User $user, Review $review, mixed $createdAt = null): ReviewLike
+    {
+        return ReviewLike::create([
+            'user_id' => $user->id,
+            'review_id' => $review->id,
+            'created_at' => $createdAt ?? now(),
+        ]);
     }
 }

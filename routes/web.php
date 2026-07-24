@@ -36,7 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/reviews/{review}/edit', [ReviewController::class, 'edit'])->name('reviews.edit');
     Route::put('/reviews/{review}', [ReviewController::class, 'update'])->name('reviews.update');
     Route::delete('/reviews/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
-    Route::post('/reviews/{review}/like', fn () => abort(501))->name('reviews.like');
+    Route::post('/reviews/{review}/like', [ReviewController::class, 'like'])->name('reviews.like');
     Route::get('/genres', fn () => abort(501))->name('genres.index');
 });
 

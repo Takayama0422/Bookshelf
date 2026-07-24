@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateReviewRequest;
 use App\Models\Book;
 use App\Models\Review;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ReviewController extends Controller
@@ -55,5 +56,12 @@ class ReviewController extends Controller
         return redirect()
             ->route('books.show', $book)
             ->with('success', 'レビューを削除しました。');
+    }
+
+    public function like(Request $request, Review $review): RedirectResponse
+    {
+        $request->user()->toggleReviewLike($review);
+
+        return redirect()->route('books.show', $review->book);
     }
 }

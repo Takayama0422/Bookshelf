@@ -78,4 +78,17 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Review::class, 'review_likes')->withPivot('created_at');
     }
+
+    public function toggleReviewLike(Review $review): void
+    {
+        if ($this->likedReviews()->whereKey($review->id)->exists()) {
+            $this->likedReviews()->detach($review->id);
+
+            return;
+        }
+
+        $this->likedReviews()->syncWithoutDetaching([
+            $review->id => ['created_at' => Carbon::now()],
+        ]);
+    }
 }
