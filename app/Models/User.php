@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -58,6 +59,19 @@ class User extends Authenticatable
     public function favoriteBooks(): BelongsToMany
     {
         return $this->belongsToMany(Book::class, 'favorites')->withPivot('created_at');
+    }
+
+    public function toggleFavorite(Book $book): void
+    {
+        if ($this->favoriteBooks()->whereKey($book->id)->exists()) {
+            $this->favoriteBooks()->detach($book->id);
+
+            return;
+        }
+
+        $this->favoriteBooks()->attach($book->id, [
+            'created_at' => Carbon::now(),
+        ]);
     }
 
     public function likedReviews(): BelongsToMany
