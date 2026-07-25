@@ -293,11 +293,25 @@ VITE_PORT=5173
 
 ## APIエンドポイント一覧
 
-現在の `routes/api.php` に定義されているAPIのみを記載しています。基本公開APIの `/api/v1/books` はまだ実装されていません。
+基本公開APIと、応用段階で追加するSanctum認証を含むAPIエンドポイントを記載します。応用段階では、書き込み系エンドポイントにBearerトークン認証と所有者認可を適用します。
 
-| HTTPメソッド | パス | ミドルウェア | 概要 |
-| --- | --- | --- | --- |
-| GET | `/api/user` | `auth:sanctum` | 認証済みユーザー情報を返す |
+| HTTPメソッド | パス | 基本段階の認証 | 応用段階の認証 | 概要 |
+| --- | --- | --- | --- | --- |
+| GET | `/api/user` | `auth:sanctum` | `auth:sanctum` | 認証済みユーザー情報を返す |
+| GET | `/api/v1/books` | 不要 | 不要 | 書籍一覧を取得する。`keyword`、`genre`、`sort`、`page`、`per_page`に対応し、ジャンル、平均評価、レビュー件数を返す |
+| GET | `/api/v1/books/{book}` | 不要 | 不要 | 書籍詳細、ジャンル、レビュー投稿者名、評価、コメント、投稿日時を取得する |
+| POST | `/api/v1/books` | 不要 | `auth:sanctum` | 書籍を新規登録する。基本段階は`user_id`を使用し、応用段階は認証ユーザーを登録者とする |
+| PUT | `/api/v1/books/{book}` | 不要 | `auth:sanctum` + `BookPolicy` | 書籍を更新する。応用段階は所有者のみ更新できる |
+| DELETE | `/api/v1/books/{book}` | 不要 | `auth:sanctum` + `BookPolicy` | 書籍を削除する。関連レビュー、お気に入り、ジャンル紐付けを適切に処理する |
+| POST | `/api/tokens` | 未実装 | 応用 | `email`、`password`、`token_name`を受け付け、SanctumのBearerトークンを発行する |
+
+### API共通仕様
+
+- 一覧APIはデフォルト20件、最大100件のページネーションに対応する。
+- 一覧APIのレスポンスは`data`、`meta`、`links`形式で返す。
+- 存在しない書籍は404、入力エラーは422、応用段階の未認証は401、認可エラーは403を返す。
+- エラーは`message`と`errors`を含むJSON形式で返し、バリデーションメッセージは日本語で統一する。
+- レスポンス整形には`BookResource`、`BookCollection`、`ReviewResource`などのAPI Resourceを使用する。
 
 ## 開発環境URL
 
