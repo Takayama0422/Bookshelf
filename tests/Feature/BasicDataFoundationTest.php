@@ -27,12 +27,32 @@ class BasicDataFoundationTest extends TestCase
         $this->assertSame(32, Review::count());
         $this->assertSame(15, Favorite::count());
         $this->assertSame(24, ReviewLike::count());
+        $this->assertDatabaseHas('users', [
+            'name' => '山田太郎',
+            'email' => 'yamada@example.com',
+        ]);
+        $this->assertDatabaseHas('genres', ['name' => '小説']);
+        $this->assertDatabaseHas('genres', ['name' => '旅行']);
+        $this->assertDatabaseHas('books', [
+            'title' => '吾輩は猫である',
+            'author' => '夏目漱石',
+            'isbn' => '9784101010014',
+            'published_date' => '1905-01-01',
+            'image_url' => 'https://placehold.co/200x300/e2e8f0/475569?text=1',
+        ]);
+        $this->assertDatabaseHas('books', [
+            'title' => 'コンテナ物語',
+            'author' => 'マルク・レビンソン',
+            'isbn' => '9784822251468',
+            'published_date' => '2007-01-18',
+            'image_url' => 'https://placehold.co/200x300/e2e8f0/475569?text=11',
+        ]);
     }
 
     public function test_seeders_can_be_run_repeatedly_without_duplicates(): void
     {
         $this->seed(DatabaseSeeder::class);
-        $password = User::where('email', 'taro.yamada@example.com')->value('password');
+        $password = User::where('email', 'yamada@example.com')->value('password');
         $this->seed(DatabaseSeeder::class);
 
         $this->assertSame(5, User::count());
@@ -41,21 +61,21 @@ class BasicDataFoundationTest extends TestCase
         $this->assertSame(32, Review::count());
         $this->assertSame(15, Favorite::count());
         $this->assertSame(24, ReviewLike::count());
-        $this->assertSame($password, User::where('email', 'taro.yamada@example.com')->value('password'));
+        $this->assertSame($password, User::where('email', 'yamada@example.com')->value('password'));
     }
 
     public function test_model_relations_return_expected_related_data(): void
     {
         $this->seed(DatabaseSeeder::class);
 
-        $book = Book::where('isbn', '9784003101056')->firstOrFail();
-        $user = User::where('email', 'ken.tanaka@example.com')->firstOrFail();
+        $book = Book::where('isbn', '9784822251468')->firstOrFail();
+        $user = User::where('email', 'yamada@example.com')->firstOrFail();
         $review = Review::whereBelongsTo($book)->whereBelongsTo($user)->firstOrFail();
 
         $this->assertTrue($book->user->is($user));
-        $this->assertTrue($book->genres->contains('name', '文学'));
-        $this->assertTrue($book->genres->contains('name', 'ファンタジー'));
-        $this->assertSame(3, $book->reviews()->count());
+        $this->assertTrue($book->genres->contains('name', 'ビジネス'));
+        $this->assertTrue($book->genres->contains('name', '歴史'));
+        $this->assertSame(2, $book->reviews()->count());
         $this->assertTrue($review->book->is($book));
         $this->assertTrue($review->user->is($user));
         $this->assertGreaterThan(0, $review->likedByUsers()->count());
@@ -115,12 +135,12 @@ class BasicDataFoundationTest extends TestCase
     {
         $this->seed(DatabaseSeeder::class);
 
-        $book = Book::where('isbn', '9784003101056')->firstOrFail();
+        $book = Book::where('isbn', '9784822251468')->firstOrFail();
         $reviewIds = $book->reviews()->pluck('id');
 
         $book->delete();
 
-        $this->assertDatabaseMissing('books', ['isbn' => '9784003101056']);
+        $this->assertDatabaseMissing('books', ['isbn' => '9784822251468']);
         $this->assertDatabaseCount('books', 10);
         $this->assertDatabaseMissing('book_genre', ['book_id' => $book->id]);
         $this->assertDatabaseMissing('favorites', ['book_id' => $book->id]);
@@ -134,13 +154,13 @@ class BasicDataFoundationTest extends TestCase
     {
         $this->seed(DatabaseSeeder::class);
 
-        $user = User::where('email', 'taro.yamada@example.com')->firstOrFail();
+        $user = User::where('email', 'yamada@example.com')->firstOrFail();
         $bookIds = $user->books()->pluck('id');
         $reviewIds = $user->reviews()->pluck('id');
 
         $user->delete();
 
-        $this->assertDatabaseMissing('users', ['email' => 'taro.yamada@example.com']);
+        $this->assertDatabaseMissing('users', ['email' => 'yamada@example.com']);
         foreach ($bookIds as $bookId) {
             $this->assertDatabaseMissing('books', ['id' => $bookId]);
             $this->assertDatabaseMissing('book_genre', ['book_id' => $bookId]);

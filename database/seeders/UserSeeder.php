@@ -10,25 +10,22 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
-        $verifiedAt = '2026-07-24 00:00:00';
         $users = [
-            ['name' => '山田 太郎', 'email' => 'taro.yamada@example.com'],
-            ['name' => '佐藤 花子', 'email' => 'hanako.sato@example.com'],
-            ['name' => '鈴木 一郎', 'email' => 'ichiro.suzuki@example.com'],
-            ['name' => '高橋 美咲', 'email' => 'misaki.takahashi@example.com'],
-            ['name' => '田中 健', 'email' => 'ken.tanaka@example.com'],
+            ['name' => '山田太郎', 'email' => 'yamada@example.com'],
+            ['name' => '鈴木花子', 'email' => 'suzuki@example.com'],
+            ['name' => '田中一郎', 'email' => 'tanaka@example.com'],
+            ['name' => '佐藤美咲', 'email' => 'sato@example.com'],
+            ['name' => '高橋健太', 'email' => 'takahashi@example.com'],
         ];
 
         foreach ($users as $user) {
-            $model = User::firstOrNew(['email' => $user['email']]);
-            $model->name = $user['name'];
-            $model->email_verified_at = $verifiedAt;
-
-            if (! $model->exists) {
-                $model->password = Hash::make('password');
-            }
-
-            $model->save();
+            User::firstOrCreate(
+                ['email' => $user['email']],
+                [
+                    'name' => $user['name'],
+                    'password' => Hash::make('password'),
+                ],
+            );
         }
     }
 }
