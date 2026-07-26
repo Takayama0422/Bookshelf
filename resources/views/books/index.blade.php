@@ -19,6 +19,41 @@
                 </div>
             @endif
 
+            <form method="GET" action="{{ route('books.index') }}" class="mb-4 bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label for="keyword" class="block text-sm font-medium text-gray-700">キーワード</label>
+                        <input type="text" name="keyword" id="keyword" value="{{ $filters['keyword'] }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+
+                    <div>
+                        <label for="genre" class="block text-sm font-medium text-gray-700">ジャンル</label>
+                        <select name="genre" id="genre" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">すべて</option>
+                            @foreach($genres as $genre)
+                                <option value="{{ $genre->id }}" @selected($filters['genre'] === $genre->id)>
+                                    {{ $genre->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="sort" class="block text-sm font-medium text-gray-700">並び順</label>
+                        <select name="sort" id="sort" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="latest" @selected($filters['sort'] === 'latest')>登録日が新しい順</option>
+                            <option value="oldest" @selected($filters['sort'] === 'oldest')>登録日が古い順</option>
+                            <option value="title" @selected($filters['sort'] === 'title')>タイトル昇順</option>
+                            <option value="rating" @selected($filters['sort'] === 'rating')>評価が高い順</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        検索
+                    </button>
+                </div>
+            </form>
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     @if($books->isEmpty())
