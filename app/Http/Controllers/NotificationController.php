@@ -23,6 +23,14 @@ class NotificationController extends Controller
         ]);
     }
 
+    /**
+     * 所有者として更新を許可された通知を既読にする。
+     *
+     * 未読の場合のみ既読日時をデータベースへ保存する。
+     *
+     * @param  DatabaseNotification  $notification  既読化するデータベース通知
+     * @return RedirectResponse 通知一覧へのリダイレクトレスポンス
+     */
     public function read(DatabaseNotification $notification): RedirectResponse
     {
         $this->authorize('update', $notification);

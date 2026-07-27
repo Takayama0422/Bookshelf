@@ -8,6 +8,16 @@ use Illuminate\Http\JsonResponse;
 
 class TokenController extends Controller
 {
+    /**
+     * 認証情報を検証して新しいAPIトークンを発行する。
+     *
+     * 発行に成功した場合はBearerトークンを返し、認証失敗時はエラー情報を401で返す。
+     * 成功時は指定された名前のアクセストークンがデータベースへ保存される。
+     *
+     * @param  IssueTokenRequest  $request  検証済みの認証情報とトークン名
+     * @param  ApiTokenService  $tokens  APIトークン発行サービス
+     * @return JsonResponse 発行済みトークンまたは認証エラーのJSONレスポンス
+     */
     public function store(IssueTokenRequest $request, ApiTokenService $tokens): JsonResponse
     {
         $token = $tokens->issue(

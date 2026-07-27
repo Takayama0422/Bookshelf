@@ -24,6 +24,13 @@ class StoreReviewRequest extends FormRequest
         ];
     }
 
+    /**
+     * 同一ユーザーによる同一書籍へのレビュー重複を検証する処理を返す。
+     *
+     * 重複が存在する場合はコメント項目へバリデーションエラーを追加する。
+     *
+     * @return list<callable> 基本ルール適用後に実行する検証処理
+     */
     public function after(): array
     {
         return [

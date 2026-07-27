@@ -14,6 +14,8 @@ class StoreReadingPlanRequest extends FormRequest
     }
 
     /**
+     * 同一ユーザー・書籍に進行中の計画が重複しない読書計画登録ルールを返す。
+     *
      * @return array<string, list<mixed>>
      */
     public function rules(): array
