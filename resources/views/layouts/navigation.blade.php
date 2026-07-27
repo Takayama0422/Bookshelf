@@ -30,6 +30,9 @@
                     <x-nav-link :href="route('reading-report.show')" :active="request()->routeIs('reading-report.show')">
                         {{ __('マイ読書レポート') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
+                        {{ __('通知') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('genres.index')" :active="request()->routeIs('genres.*')">
                         {{ __('ジャンル管理') }}
                     </x-nav-link>
@@ -102,6 +105,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('reading-report.show')" :active="request()->routeIs('reading-report.show')">
                 {{ __('マイ読書レポート') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
+                {{ __('通知') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('genres.index')" :active="request()->routeIs('genres.*')">
                 {{ __('ジャンル管理') }}

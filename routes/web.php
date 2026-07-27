@@ -3,6 +3,7 @@
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\GenreController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\RankingController;
 use App\Http\Controllers\ReadingPlanController;
 use App\Http\Controllers\ReadingReportController;
@@ -36,6 +37,8 @@ Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show')
 
 Route::middleware('auth')->group(function () {
     Route::get('/reading-report', ReadingReportController::class)->name('reading-report.show');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
     Route::post('/reading-plans/{reading_plan}/complete', [ReadingPlanController::class, 'complete'])->name('reading-plans.complete');
     Route::resource('reading-plans', ReadingPlanController::class)->except('show');
     Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
