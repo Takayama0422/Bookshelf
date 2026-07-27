@@ -24,6 +24,9 @@
                     <x-nav-link :href="route('favorites.index')" :active="request()->routeIs('favorites.index')">
                         {{ __('お気に入り') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('reading-plans.index')" :active="request()->routeIs('reading-plans.*')">
+                        {{ __('読書計画') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('reading-report.show')" :active="request()->routeIs('reading-report.show')">
                         {{ __('マイ読書レポート') }}
                     </x-nav-link>
@@ -93,6 +96,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('favorites.index')" :active="request()->routeIs('favorites.index')">
                 {{ __('お気に入り') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('reading-plans.index')" :active="request()->routeIs('reading-plans.*')">
+                {{ __('読書計画') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('reading-report.show')" :active="request()->routeIs('reading-report.show')">
                 {{ __('マイ読書レポート') }}
