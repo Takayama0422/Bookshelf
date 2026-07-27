@@ -1,5 +1,6 @@
 @php
     $bookGenreIds = isset($book) ? $book->genres->pluck('id')->toArray() : [];
+    $bookData = $bookData ?? [];
 @endphp
 
 @csrf
@@ -9,7 +10,7 @@
         <label for="title" class="block font-medium text-sm text-gray-700 mb-1">
             タイトル <span class="text-red-500">*</span>
         </label>
-        <input type="text" name="title" id="title" value="{{ old('title', $book->title ?? '') }}"
+        <input type="text" name="title" id="title" value="{{ old('title', $bookData['title'] ?? ($book->title ?? '')) }}"
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full"
             placeholder="書籍のタイトルを入力">
         @error('title')
@@ -22,7 +23,7 @@
         <label for="author" class="block font-medium text-sm text-gray-700 mb-1">
             著者 <span class="text-red-500">*</span>
         </label>
-        <input type="text" name="author" id="author" value="{{ old('author', $book->author ?? '') }}"
+        <input type="text" name="author" id="author" value="{{ old('author', $bookData['author'] ?? ($book->author ?? '')) }}"
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full"
             placeholder="著者名を入力">
         @error('author')
@@ -35,7 +36,7 @@
         <label for="isbn" class="block font-medium text-sm text-gray-700 mb-1">
             ISBN-13 <span class="text-red-500">*</span>
         </label>
-        <input type="text" name="isbn" id="isbn" value="{{ old('isbn', $book->isbn ?? '') }}"
+        <input type="text" name="isbn" id="isbn" value="{{ old('isbn', $bookData['isbn'] ?? ($book->isbn ?? '')) }}"
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full"
             placeholder="9784000000000">
         <p class="text-xs text-gray-500 mt-1">13桁のISBNコードを入力してください</p>
@@ -49,7 +50,7 @@
         <label for="published_date" class="block font-medium text-sm text-gray-700 mb-1">
             出版日 <span class="text-red-500">*</span>
         </label>
-        <input type="date" name="published_date" id="published_date" value="{{ old('published_date', $book->published_date ?? '') }}"
+        <input type="date" name="published_date" id="published_date" value="{{ old('published_date', $bookData['published_date'] ?? ($book->published_date ?? '')) }}"
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full">
         @error('published_date')
             <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
@@ -63,7 +64,7 @@
         </label>
         <textarea name="description" id="description" rows="4"
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full"
-            placeholder="書籍の説明を入力（任意）">{{ old('description', $book->description ?? '') }}</textarea>
+            placeholder="書籍の説明を入力（任意）">{{ old('description', $bookData['description'] ?? ($book->description ?? '')) }}</textarea>
         @error('description')
             <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
         @enderror
@@ -74,7 +75,7 @@
         <label for="image_url" class="block font-medium text-sm text-gray-700 mb-1">
             画像URL
         </label>
-        <input type="text" name="image_url" id="image_url" value="{{ old('image_url', $book->image_url ?? '') }}"
+        <input type="text" name="image_url" id="image_url" value="{{ old('image_url', $bookData['image_url'] ?? ($book->image_url ?? '')) }}"
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full"
             placeholder="https://example.com/image.jpg">
         <p class="text-xs text-gray-500 mt-1">書籍の表紙画像のURLを入力してください（任意）</p>
