@@ -23,6 +23,7 @@ Route::get('/books', [BookController::class, 'index'])->name('books.index');
 
 Route::middleware('auth')->group(function () {
     Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
+    Route::get('/books/isbn-search', [BookController::class, 'isbnSearch'])->name('books.isbn-search');
     Route::post('/books', [BookController::class, 'store'])->name('books.store');
     Route::get('/books/{book}/edit', [BookController::class, 'edit'])->name('books.edit');
     Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update');
