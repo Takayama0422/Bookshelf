@@ -9,6 +9,7 @@ use App\Http\Requests\Api\V1\UpdateBookRequest;
 use App\Http\Resources\BookCollection;
 use App\Http\Resources\BookResource;
 use App\Models\Book;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 
@@ -52,6 +53,14 @@ class BookController extends Controller
         return new BookCollection($books->paginate($request->perPage()));
     }
 
+    /**
+     * 認証ユーザーを所有者として書籍を登録し、ジャンルをトランザクション内で同期する。
+     *
+     * @param  StoreBookRequest  $request  検証済みの書籍情報とジャンルID
+     * @return JsonResponse 作成した書籍を含むHTTP 201のJSONレスポンス
+     *
+     * @throws AuthorizationException 書籍の作成が許可されていない場合
+     */
     public function store(StoreBookRequest $request): JsonResponse
     {
         $this->authorize('create', Book::class);
@@ -73,6 +82,15 @@ class BookController extends Controller
         return new BookResource($this->loadBookResponseData($book, includeReviews: true));
     }
 
+    /**
+     * 所有者として更新を許可された書籍とジャンルをトランザクション内で更新する。
+     *
+     * @param  UpdateBookRequest  $request  検証済みの書籍情報とジャンルID
+     * @param  Book  $book  更新対象の書籍
+     * @return BookResource 更新後の書籍リソース
+     *
+     * @throws AuthorizationException 書籍の更新が許可されていない場合
+     */
     public function update(UpdateBookRequest $request, Book $book): BookResource
     {
         $this->authorize('update', $book);
@@ -85,6 +103,14 @@ class BookController extends Controller
         return new BookResource($this->loadBookResponseData($book));
     }
 
+    /**
+     * 所有者として削除を許可された書籍をトランザクション内で削除する。
+     *
+     * @param  Book  $book  削除対象の書籍
+     * @return JsonResponse 本文を含まないHTTP 204のJSONレスポンス
+     *
+     * @throws AuthorizationException 書籍の削除が許可されていない場合
+     */
     public function destroy(Book $book): JsonResponse
     {
         $this->authorize('delete', $book);

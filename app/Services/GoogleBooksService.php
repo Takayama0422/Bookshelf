@@ -7,11 +7,22 @@ use App\Exceptions\IsbnApiUnavailableException;
 use App\Exceptions\IsbnBookNotFoundException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use InvalidArgumentException;
 use Throwable;
 
 class GoogleBooksService
 {
-    /** @return array{title: string, author: string, published_date: ?string, description: string, image_url: string, isbn: string} */
+    /**
+     * ISBNを正規化し、設定済みの接続先とタイムアウトでGoogle Books APIを検索する。
+     *
+     * @param  string  $isbn  検索するISBN
+     * @return array{title: string, author: string, published_date: ?string, description: string, image_url: string, isbn: string} 登録画面で使用する書籍情報
+     *
+     * @throws InvalidArgumentException ISBNが不正な場合
+     * @throws IsbnApiUnavailableException APIへ接続できない場合
+     * @throws IsbnApiResponseException API応答または書籍情報の形式が不正な場合
+     * @throws IsbnBookNotFoundException ISBNに一致する書籍がない場合
+     */
     public function search(string $isbn): array
     {
         $normalizedIsbn = IsbnNormalizer::normalize($isbn);
@@ -57,6 +68,12 @@ class GoogleBooksService
         ];
     }
 
+    /**
+     * APIの出版日を日付形式へ変換し、年月または年だけの場合は月初または年初で補完する。
+     *
+     * @param  mixed  $publishedDate  APIから取得した出版日
+     * @return string|null 正規化した日付。不正または空の場合はnull
+     */
     private function publishedDate(mixed $publishedDate): ?string
     {
         if (! is_string($publishedDate) || $publishedDate === '') {

@@ -26,6 +26,13 @@ class ProcessReadingPlans extends Command
         'overdue' => 0,
     ];
 
+    /**
+     * 3日前・当日・期限超過の読書計画を処理し、通知数と失効数を出力する。
+     *
+     * 対象計画の通知日時を更新し、期限超過計画を失効状態へ遷移させる。
+     *
+     * @return int コマンドの成功終了コード
+     */
     public function handle(): int
     {
         $this->counts = [
@@ -67,6 +74,20 @@ class ProcessReadingPlans extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * 指定日の進行中計画へリマインダーを送信し、送信日時を更新する。
+     *
+     * 計画を分割取得し、各計画をトランザクション内で行ロックして状態と送信済み日時を
+     * 再確認することで、重複通知を防止する。
+     *
+     * @param  Carbon  $targetDate  通知対象とする目標読了日
+     * @param  string  $remindedColumn  送信日時を記録するカラム名
+     * @param  string  $reminderType  送信する通知種別
+     * @param  string  $countKey  送信件数を加算する集計キー
+     * @param  Carbon  $sentAt  送信日時として保存する時刻
+     *
+     * 戻り値はない。
+     */
     private function processReminder(
         Carbon $targetDate,
         string $remindedColumn,
@@ -106,6 +127,17 @@ class ProcessReadingPlans extends Command
             });
     }
 
+    /**
+     * 期限を過ぎた進行中計画へ未送信の通知を送り、失効状態へ遷移させる。
+     *
+     * 計画ごとにトランザクションと行ロックを使用し、通知日時、失効状態、
+     * 失効日時を一括して保存することで重複処理を防止する。
+     *
+     * @param  Carbon  $today  期限超過を判定する基準日
+     * @param  Carbon  $processedAt  通知日時と失効日時として保存する時刻
+     *
+     * 戻り値はない。
+     */
     private function processOverduePlans(Carbon $today, Carbon $processedAt): void
     {
         ReadingPlan::query()
@@ -142,6 +174,13 @@ class ProcessReadingPlans extends Command
             });
     }
 
+    /**
+     * 読書計画の所有者へ指定種別のDatabase通知を同期送信する。
+     *
+     * @param  ReadingPlan  $readingPlan  通知対象の読書計画
+     * @param  string  $reminderType  送信する通知種別
+     * @return bool 通知レコードが新しく作成された場合はtrue
+     */
     private function sendReminder(ReadingPlan $readingPlan, string $reminderType): bool
     {
         $beforeCount = $readingPlan->user

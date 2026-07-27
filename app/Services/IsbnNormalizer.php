@@ -6,6 +6,14 @@ use InvalidArgumentException;
 
 class IsbnNormalizer
 {
+    /**
+     * ISBNから区切り文字を除去して大文字化し、チェックディジットを検証する。
+     *
+     * @param  string  $isbn  正規化するISBN
+     * @return string 検証済みのISBN
+     *
+     * @throws InvalidArgumentException ISBNが不正な場合
+     */
     public static function normalize(string $isbn): string
     {
         $normalized = self::sanitize($isbn);
@@ -17,11 +25,23 @@ class IsbnNormalizer
         return $normalized;
     }
 
+    /**
+     * ISBNの前後空白、空白、タブ、ハイフンを除去して大文字化する。
+     *
+     * @param  string  $isbn  整形するISBN
+     * @return string 整形後のISBN
+     */
     public static function sanitize(string $isbn): string
     {
         return strtoupper(preg_replace('/[ \t-]/', '', trim($isbn)) ?? '');
     }
 
+    /**
+     * ISBN-10またはISBN-13の形式とチェックディジットを検証する。
+     *
+     * @param  string  $isbn  検証するISBN
+     * @return bool 有効なISBNの場合はtrue
+     */
     public static function isValid(string $isbn): bool
     {
         $normalized = self::sanitize($isbn);

@@ -8,6 +8,11 @@ use Illuminate\Validation\Rule;
 
 class UpdateBookRequest extends FormRequest
 {
+    /**
+     * ルートの書籍が存在し、認証ユーザーに更新権限がある場合のみ許可する。
+     *
+     * @return bool 書籍を更新できる場合はtrue
+     */
     public function authorize(): bool
     {
         $book = $this->route('book');

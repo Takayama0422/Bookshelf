@@ -8,7 +8,11 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 class Kernel extends ConsoleKernel
 {
     /**
-     * Define the application's command schedule.
+     * 読書計画処理コマンドを毎日00:00に重複実行なしで登録する。
+     *
+     * @param  Schedule  $schedule  コマンドスケジュール
+     *
+     * 戻り値はない。
      */
     protected function schedule(Schedule $schedule): void
     {

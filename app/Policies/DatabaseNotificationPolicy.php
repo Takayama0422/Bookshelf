@@ -7,6 +7,12 @@ use Illuminate\Notifications\DatabaseNotification;
 
 class DatabaseNotificationPolicy
 {
+    /**
+     * 認証済みユーザーに通知一覧の表示を許可する。
+     *
+     * @param  User  $user  一覧表示を試みるユーザー
+     * @return bool 常にtrue
+     */
     public function viewAny(User $user): bool
     {
         return true;
