@@ -9,6 +9,7 @@ use App\Models\Review;
 use App\Models\ReviewLike;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class PublicBookApiTest extends TestCase
@@ -80,6 +81,8 @@ class PublicBookApiTest extends TestCase
         $user = User::factory()->create();
         $genre = Genre::create(['name' => '文学']);
 
+        Sanctum::actingAs($user);
+
         $this->postJson('/api/v1/books', $this->validBookPayload($user, ['genre_ids' => [$genre->id]]))
             ->assertCreated()
             ->assertJsonPath('data.title', 'APIテスト書籍')
@@ -100,8 +103,9 @@ class PublicBookApiTest extends TestCase
 
     public function test_book_store_returns_japanese_validation_errors(): void
     {
+        Sanctum::actingAs(User::factory()->create());
+
         $this->postJson('/api/v1/books', [
-            'user_id' => 999,
             'title' => '',
             'author' => '',
             'isbn' => '123',
@@ -109,9 +113,8 @@ class PublicBookApiTest extends TestCase
             'genre_ids' => [],
         ])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['user_id', 'title', 'author', 'isbn', 'published_date', 'genre_ids'])
-            ->assertJsonPath('errors.title.0', 'タイトルは必ず入力してください。')
-            ->assertJsonPath('errors.user_id.0', '指定された登録者は存在しません。');
+            ->assertJsonValidationErrors(['title', 'author', 'isbn', 'published_date', 'genre_ids'])
+            ->assertJsonPath('errors.title.0', 'タイトルは必ず入力してください。');
     }
 
     public function test_book_update_updates_book_and_excludes_own_isbn_from_unique_rule(): void
@@ -119,6 +122,8 @@ class PublicBookApiTest extends TestCase
         $user = User::factory()->create();
         $genre = Genre::create(['name' => '文学']);
         $book = $this->createBook($user, ['isbn' => '9784000000100'], [$genre->id]);
+
+        Sanctum::actingAs($user);
 
         $this->putJson('/api/v1/books/'.$book->id, $this->validBookPayload($user, [
             'title' => '更新後タイトル',
@@ -139,6 +144,8 @@ class PublicBookApiTest extends TestCase
     public function test_book_update_returns_validation_and_missing_errors(): void
     {
         $book = $this->createBook();
+
+        Sanctum::actingAs($book->user);
 
         $this->putJson('/api/v1/books/'.$book->id, [
             'user_id' => $book->user_id,
@@ -174,6 +181,8 @@ class PublicBookApiTest extends TestCase
             'created_at' => now(),
         ]);
 
+        Sanctum::actingAs($owner);
+
         $this->deleteJson('/api/v1/books/'.$book->id)
             ->assertNoContent();
 
@@ -186,6 +195,8 @@ class PublicBookApiTest extends TestCase
 
     public function test_book_delete_returns_json_error_for_missing_book(): void
     {
+        Sanctum::actingAs(User::factory()->create());
+
         $this->deleteJson('/api/v1/books/999')
             ->assertNotFound()
             ->assertJsonPath('message', '書籍が見つかりません。');
