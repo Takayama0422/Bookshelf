@@ -34,12 +34,12 @@
     <!-- ISBN -->
     <div>
         <label for="isbn" class="block font-medium text-sm text-gray-700 mb-1">
-            ISBN-13 <span class="text-red-500">*</span>
+            ISBN-13
         </label>
         <input type="text" name="isbn" id="isbn" value="{{ old('isbn', $bookData['isbn'] ?? ($book->isbn ?? '')) }}"
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full"
             placeholder="9784000000000">
-        <p class="text-xs text-gray-500 mt-1">13桁のISBNコードを入力してください</p>
+        <p class="text-xs text-gray-500 mt-1">13桁のISBNコードを入力してください（任意）</p>
         @error('isbn')
             <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
         @enderror
@@ -48,7 +48,7 @@
     <!-- 出版日 -->
     <div>
         <label for="published_date" class="block font-medium text-sm text-gray-700 mb-1">
-            出版日 <span class="text-red-500">*</span>
+            出版日
         </label>
         <input type="date" name="published_date" id="published_date" value="{{ old('published_date', $bookData['published_date'] ?? ($book->published_date ?? '')) }}"
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full">

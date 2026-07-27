@@ -101,6 +101,30 @@ class PublicBookApiTest extends TestCase
         ]);
     }
 
+    public function test_book_store_accepts_nullable_isbn_and_published_date(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::create(['name' => '文学']);
+
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/v1/books', $this->validBookPayload($user, [
+            'isbn' => null,
+            'published_date' => null,
+            'genre_ids' => [$genre->id],
+        ]))
+            ->assertCreated()
+            ->assertJsonPath('data.user_id', $user->id)
+            ->assertJsonPath('data.isbn', null)
+            ->assertJsonPath('data.published_date', null);
+
+        $this->assertDatabaseHas('books', [
+            'user_id' => $user->id,
+            'isbn' => null,
+            'published_date' => null,
+        ]);
+    }
+
     public function test_book_store_returns_japanese_validation_errors(): void
     {
         Sanctum::actingAs(User::factory()->create());

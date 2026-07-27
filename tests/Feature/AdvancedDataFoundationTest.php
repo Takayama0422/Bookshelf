@@ -54,6 +54,28 @@ class AdvancedDataFoundationTest extends TestCase
         $this->assertSame('2026-07-12 00:00:00', $inProgress->created_at->toDateTimeString());
     }
 
+    public function test_advanced_book_columns_allow_nullable_isbn_and_published_date(): void
+    {
+        $user = User::factory()->create();
+
+        $book = Book::create([
+            'user_id' => $user->id,
+            'title' => 'ISBN未設定の本',
+            'author' => '著者',
+            'isbn' => null,
+            'published_date' => null,
+            'description' => null,
+            'image_url' => null,
+        ]);
+
+        $this->assertDatabaseHas('books', [
+            'id' => $book->id,
+            'isbn' => null,
+            'published_date' => null,
+        ]);
+        $this->assertNull($book->fresh()->published_date);
+    }
+
     public function test_advanced_seeder_is_idempotent_and_preserves_basic_data(): void
     {
         Carbon::setTestNow('2026-07-26 10:00:00');

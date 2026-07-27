@@ -121,6 +121,27 @@ class BookManagementTest extends TestCase
         );
     }
 
+    public function test_authenticated_users_can_store_books_without_isbn_and_published_date(): void
+    {
+        $user = User::factory()->create();
+        $genre = Genre::create(['name' => '文学']);
+
+        $this->actingAs($user)
+            ->post('/books', $this->validBookPayload([
+                'isbn' => null,
+                'published_date' => null,
+                'genres' => [$genre->id],
+            ]))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('books', [
+            'user_id' => $user->id,
+            'title' => 'テスト書籍',
+            'isbn' => null,
+            'published_date' => null,
+        ]);
+    }
+
     public function test_book_validation_rejects_required_format_digits_url_and_future_date_errors(): void
     {
         $user = User::factory()->create();
