@@ -84,6 +84,16 @@ class IsbnSearchTest extends TestCase
             ->assertSee('書籍情報を取得できませんでした。時間をおいて再度お試しください。');
     }
 
+    public function test_it_handles_external_api_error_status(): void
+    {
+        Http::fake(['*' => Http::response(['error' => 'server error'], 500)]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('books.isbn-search', ['isbn' => '9780306406157']))
+            ->assertOk()
+            ->assertSee('書籍情報を取得できませんでした。時間をおいて再度お試しください。');
+    }
+
     /** @dataProvider unavailableResponseProvider */
     public function test_it_handles_external_api_connection_failures(callable $failure): void
     {
