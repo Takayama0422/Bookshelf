@@ -27,6 +27,13 @@ class UpdateReviewRequest extends FormRequest
         ];
     }
 
+    /**
+     * 更新対象自身を除外してレビュー重複を検証する処理を返す。
+     *
+     * 同一ユーザー・書籍の別レビューが存在する場合はコメント項目へエラーを追加する。
+     *
+     * @return list<callable> 基本ルール適用後に実行する検証処理
+     */
     public function after(): array
     {
         return [

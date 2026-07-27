@@ -44,6 +44,16 @@ class ReadingPlanController extends Controller
         ]);
     }
 
+    /**
+     * 認可済みユーザーの読書計画をトランザクション内で登録する。
+     *
+     * ユーザー行をロックして進行中計画の重複を再確認し、競合する登録を防止する。
+     *
+     * @param  StoreReadingPlanRequest  $request  検証済みの読書計画登録内容
+     * @return RedirectResponse 読書計画一覧へのリダイレクトレスポンス
+     *
+     * @throws ValidationException 同じ書籍の進行中計画が既に存在する場合
+     */
     public function store(StoreReadingPlanRequest $request): RedirectResponse
     {
         $this->authorize('create', ReadingPlan::class);
@@ -78,6 +88,17 @@ class ReadingPlanController extends Controller
         ]);
     }
 
+    /**
+     * 所有者として認可された読書計画をトランザクション内で更新する。
+     *
+     * ユーザー行をロックし、対象が進行中の場合は自身を除外して重複を再確認する。
+     *
+     * @param  UpdateReadingPlanRequest  $request  検証済みの読書計画更新内容
+     * @param  ReadingPlan  $readingPlan  更新対象の読書計画
+     * @return RedirectResponse 読書計画一覧へのリダイレクトレスポンス
+     *
+     * @throws ValidationException 同じ書籍の別の進行中計画が存在する場合
+     */
     public function update(UpdateReadingPlanRequest $request, ReadingPlan $readingPlan): RedirectResponse
     {
         $this->authorize('update', $readingPlan);
@@ -101,6 +122,14 @@ class ReadingPlanController extends Controller
             ->with('success', '読書計画を更新しました。');
     }
 
+    /**
+     * 所有者として認可された読書計画をトランザクション内で読了状態へ遷移させる。
+     *
+     * 未読了の場合のみ状態と読了日時を更新し、既に読了済みの場合はDB更新を行わない。
+     *
+     * @param  ReadingPlan  $readingPlan  読了状態へ遷移させる読書計画
+     * @return RedirectResponse 読書計画一覧へのリダイレクトレスポンス
+     */
     public function complete(ReadingPlan $readingPlan): RedirectResponse
     {
         $this->authorize('complete', $readingPlan);
@@ -135,6 +164,15 @@ class ReadingPlanController extends Controller
         return Book::query()->orderBy('title')->orderBy('id')->get(['id', 'title']);
     }
 
+    /**
+     * 指定ユーザーと書籍の組み合わせに進行中の読書計画が重複していないことを確認する。
+     *
+     * @param  int  $userId  確認対象のユーザーID
+     * @param  int  $bookId  確認対象の書籍ID
+     * @param  int|null  $ignorePlanId  重複検査から除外する読書計画ID
+     *
+     * @throws ValidationException 進行中の読書計画が既に存在する場合
+     */
     private function ensureNoInProgressDuplicate(int $userId, int $bookId, ?int $ignorePlanId = null): void
     {
         $exists = ReadingPlan::query()

@@ -14,6 +14,12 @@ use Illuminate\Support\Facades\DB;
 
 class BookController extends Controller
 {
+    /**
+     * 検索条件に一致する書籍をレビュー評価と件数付きで取得し、ページネーションして返す。
+     *
+     * @param  IndexBookRequest  $request  検証済みの検索・絞り込み・並び替え・件数条件
+     * @return BookCollection 書籍一覧のAPIリソースコレクション
+     */
     public function index(IndexBookRequest $request): BookCollection
     {
         $books = Book::query()
@@ -88,6 +94,16 @@ class BookController extends Controller
         return response()->json(null, 204);
     }
 
+    /**
+     * APIレスポンスに必要なリレーションとレビュー集計値を書籍へ読み込む。
+     *
+     * 渡されたモデルへジャンル、必要に応じてレビューと投稿者を読み込み、
+     * レビュー評価の平均値とレビュー件数を追加する。
+     *
+     * @param  Book  $book  レスポンスデータを読み込む書籍
+     * @param  bool  $includeReviews  レビューと投稿者を追加で読み込むかどうか
+     * @return Book レスポンス用データを読み込んだ書籍
+     */
     private function loadBookResponseData(Book $book, bool $includeReviews = false): Book
     {
         $relations = ['genres'];

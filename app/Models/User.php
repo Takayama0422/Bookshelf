@@ -66,6 +66,13 @@ class User extends Authenticatable
         return $this->belongsToMany(Book::class, 'favorites')->withPivot('created_at');
     }
 
+    /**
+     * 指定書籍のお気に入り登録状態を切り替える。
+     *
+     * 登録済みの場合は中間テーブルから削除し、未登録の場合は登録日時とともに追加する。
+     *
+     * @param  Book  $book  登録状態を切り替える書籍
+     */
     public function toggleFavorite(Book $book): void
     {
         if ($this->favoriteBooks()->whereKey($book->id)->exists()) {
@@ -84,6 +91,13 @@ class User extends Authenticatable
         return $this->belongsToMany(Review::class, 'review_likes')->withPivot('created_at');
     }
 
+    /**
+     * 指定レビューのいいね状態を切り替える。
+     *
+     * 登録済みの場合は中間テーブルから削除し、未登録の場合は登録日時とともに追加する。
+     *
+     * @param  Review  $review  いいね状態を切り替えるレビュー
+     */
     public function toggleReviewLike(Review $review): void
     {
         if ($this->likedReviews()->whereKey($review->id)->exists()) {

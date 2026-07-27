@@ -17,6 +17,10 @@ class UpdateReadingPlanRequest extends FormRequest
     }
 
     /**
+     * 読書計画の更新ルールを返す。
+     *
+     * 対象が進行中の場合は、更新対象自身を除外して同一ユーザー・書籍の重複を検証する。
+     *
      * @return array<string, list<mixed>>
      */
     public function rules(): array
