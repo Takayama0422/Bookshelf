@@ -48,6 +48,8 @@ class BookController extends Controller
 
     public function store(StoreBookRequest $request): JsonResponse
     {
+        $this->authorize('create', Book::class);
+
         $book = DB::transaction(function () use ($request): Book {
             $book = $request->user()->books()->create($request->bookAttributes());
             $book->genres()->sync($request->genreIds());
@@ -67,6 +69,8 @@ class BookController extends Controller
 
     public function update(UpdateBookRequest $request, Book $book): BookResource
     {
+        $this->authorize('update', $book);
+
         DB::transaction(function () use ($request, $book): void {
             $book->update($request->bookAttributes());
             $book->genres()->sync($request->genreIds());
@@ -79,7 +83,7 @@ class BookController extends Controller
     {
         $this->authorize('delete', $book);
 
-        $book->delete();
+        DB::transaction(fn (): bool => $book->delete());
 
         return response()->json(null, 204);
     }

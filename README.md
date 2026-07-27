@@ -170,7 +170,7 @@ erDiagram
 以下のDockerコマンドを実行して、Laravel 10.xを明示的に指定してプロジェクトを作成します。
 
 ```bash
-docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php82-composer:latest composer create-project laravel/laravel:^10.0 bookshelf-app
+docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php85-composer:latest composer create-project laravel/laravel:^10.0 bookshelf-app
 ```
 
 プロジェクト作成後、`bookshelf-app` ディレクトリに移動し、Laravel Sailをインストールします。
@@ -178,9 +178,9 @@ docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/htm
 ```bash
 cd bookshelf-app
 
-docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php82-composer:latest composer require laravel/sail --dev
+docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php85-composer:latest composer require laravel/sail --dev
 
-docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php82-composer:latest php artisan sail:install --with=mysql
+docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php85-composer:latest php artisan sail:install --with=mysql
 ```
 
 M1/M2/M3 Mac（Apple Silicon）で `sail up -d` 実行時に `no matching manifest for linux/arm64/v8` エラーが発生した場合は、`compose.yaml` の `mysql` サービスに以下を追加してください。
@@ -321,7 +321,7 @@ VITE_PORT=5173
 
 | 分類 | 技術 |
 | --- | --- |
-| バックエンド | PHP 8.1以上、Laravel 10 |
+| バックエンド | PHP 8.5、Laravel 10 |
 | フロントエンド | Blade、Vite、Tailwind CSS、Alpine.js |
 | データベース | MySQL 8.4 |
 | 開発環境 | Laravel Sail、Docker、phpMyAdmin |

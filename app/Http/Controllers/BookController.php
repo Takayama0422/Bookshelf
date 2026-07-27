@@ -136,7 +136,7 @@ class BookController extends Controller
     {
         $this->authorize('delete', $book);
 
-        $book->delete();
+        DB::transaction(fn (): bool => $book->delete());
 
         return redirect()
             ->route('books.index')

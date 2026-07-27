@@ -11,6 +11,8 @@ class NotificationController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', DatabaseNotification::class);
+
         $notifications = $request->user()
             ->notifications()
             ->latest()

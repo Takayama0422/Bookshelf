@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\ReadingPlanStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,6 +30,7 @@ class ReadingPlan extends Model
     ];
 
     protected $casts = [
+        'status' => ReadingPlanStatus::class,
         'target_date' => 'date',
         'completed_at' => 'datetime',
         'expired_at' => 'datetime',
@@ -53,9 +55,9 @@ class ReadingPlan extends Model
     public static function statuses(): array
     {
         return [
-            self::STATUS_IN_PROGRESS => '進行中',
-            self::STATUS_COMPLETED => '読了',
-            self::STATUS_EXPIRED => '期限切れ',
+            ReadingPlanStatus::IN_PROGRESS->value => ReadingPlanStatus::IN_PROGRESS->label(),
+            ReadingPlanStatus::COMPLETED->value => ReadingPlanStatus::COMPLETED->label(),
+            ReadingPlanStatus::EXPIRED->value => ReadingPlanStatus::EXPIRED->label(),
         ];
     }
 
@@ -64,11 +66,13 @@ class ReadingPlan extends Model
      */
     public static function statusValues(): array
     {
-        return array_keys(self::statuses());
+        return array_map(static fn (ReadingPlanStatus $status): string => $status->value, ReadingPlanStatus::cases());
     }
 
     public function statusLabel(): string
     {
-        return self::statuses()[$this->status] ?? $this->status;
+        return $this->status instanceof ReadingPlanStatus
+            ? $this->status->label()
+            : (string) $this->status;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\ReadingPlanStatus;
 use App\Models\ReadingPlan;
 use App\Notifications\ReadingPlanReminderNotification;
 use Illuminate\Console\Command;
@@ -89,7 +90,7 @@ class ProcessReadingPlans extends Command
                             ->first();
 
                         if (! $lockedPlan instanceof ReadingPlan
-                            || $lockedPlan->status !== ReadingPlan::STATUS_IN_PROGRESS
+                            || $lockedPlan->status !== ReadingPlanStatus::IN_PROGRESS
                             || $lockedPlan->{$remindedColumn} !== null) {
                             return;
                         }
@@ -122,7 +123,7 @@ class ProcessReadingPlans extends Command
                             ->first();
 
                         if (! $lockedPlan instanceof ReadingPlan
-                            || $lockedPlan->status !== ReadingPlan::STATUS_IN_PROGRESS) {
+                            || $lockedPlan->status !== ReadingPlanStatus::IN_PROGRESS) {
                             return;
                         }
 
@@ -132,7 +133,7 @@ class ProcessReadingPlans extends Command
                             $this->counts['overdue']++;
                         }
 
-                        $lockedPlan->status = ReadingPlan::STATUS_EXPIRED;
+                        $lockedPlan->status = ReadingPlanStatus::EXPIRED;
                         $lockedPlan->expired_at = $processedAt;
                         $lockedPlan->save();
                         $this->counts['expired']++;

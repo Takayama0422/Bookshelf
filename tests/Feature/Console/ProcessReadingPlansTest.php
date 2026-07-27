@@ -3,6 +3,7 @@
 namespace Tests\Feature\Console;
 
 use App\Console\Kernel;
+use App\Enums\ReadingPlanStatus;
 use App\Models\Book;
 use App\Models\ReadingPlan;
 use App\Models\User;
@@ -47,7 +48,7 @@ class ProcessReadingPlansTest extends TestCase
         $this->assertSame('2026-07-27 10:15:00', $threeDaysPlan->reminded_three_days_at->toDateTimeString());
         $this->assertSame('2026-07-27 10:15:00', $duePlan->reminded_due_at->toDateTimeString());
         $this->assertSame('2026-07-27 10:15:00', $overduePlan->reminded_overdue_at->toDateTimeString());
-        $this->assertSame(ReadingPlan::STATUS_EXPIRED, $overduePlan->status);
+        $this->assertSame(ReadingPlanStatus::EXPIRED, $overduePlan->status);
         $this->assertSame('2026-07-27 10:15:00', $overduePlan->expired_at->toDateTimeString());
         $this->assertSame(2, $firstUser->notifications()->count());
         $this->assertSame(1, $secondUser->notifications()->count());
@@ -100,10 +101,10 @@ class ProcessReadingPlansTest extends TestCase
         $completedPlan->refresh();
         $expiredPlan->refresh();
 
-        $this->assertSame(ReadingPlan::STATUS_COMPLETED, $completedPlan->status);
+        $this->assertSame(ReadingPlanStatus::COMPLETED, $completedPlan->status);
         $this->assertSame('2026-07-20 09:00:00', $completedPlan->completed_at->toDateTimeString());
         $this->assertNull($completedPlan->expired_at);
-        $this->assertSame(ReadingPlan::STATUS_EXPIRED, $expiredPlan->status);
+        $this->assertSame(ReadingPlanStatus::EXPIRED, $expiredPlan->status);
         $this->assertSame('2026-07-21 09:00:00', $expiredPlan->expired_at->toDateTimeString());
         $this->assertDatabaseCount('notifications', 0);
     }
@@ -125,7 +126,7 @@ class ProcessReadingPlansTest extends TestCase
         $this->assertNotNull($threeDaysPlan->refresh()->reminded_three_days_at);
         $this->assertNull($tomorrowPlan->refresh()->reminded_due_at);
         $this->assertNotNull($duePlan->refresh()->reminded_due_at);
-        $this->assertSame(ReadingPlan::STATUS_EXPIRED, $overduePlan->refresh()->status);
+        $this->assertSame(ReadingPlanStatus::EXPIRED, $overduePlan->refresh()->status);
         $this->assertSame(3, $user->notifications()->count());
     }
 
@@ -149,7 +150,7 @@ class ProcessReadingPlansTest extends TestCase
         $this->assertSame('2026-07-26 07:30:00', $alreadyThreeDays->refresh()->reminded_three_days_at->toDateTimeString());
         $this->assertSame('2026-07-26 07:30:00', $alreadyDue->refresh()->reminded_due_at->toDateTimeString());
         $this->assertSame('2026-07-26 07:30:00', $alreadyOverdue->refresh()->reminded_overdue_at->toDateTimeString());
-        $this->assertSame(ReadingPlan::STATUS_EXPIRED, $alreadyOverdue->status);
+        $this->assertSame(ReadingPlanStatus::EXPIRED, $alreadyOverdue->status);
         $this->assertDatabaseCount('notifications', 0);
     }
 

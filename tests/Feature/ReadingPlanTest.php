@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ReadingPlanStatus;
 use App\Models\Book;
 use App\Models\ReadingPlan;
 use App\Models\User;
@@ -155,7 +156,7 @@ class ReadingPlanTest extends TestCase
 
         $plan->refresh();
 
-        $this->assertSame(ReadingPlan::STATUS_COMPLETED, $plan->status);
+        $this->assertSame(ReadingPlanStatus::COMPLETED, $plan->status);
         $this->assertSame('2026-07-27 10:00:00', $plan->completed_at->toDateTimeString());
         $this->assertNull($plan->expired_at);
 
