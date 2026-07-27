@@ -49,7 +49,7 @@ class BookController extends Controller
     public function store(StoreBookRequest $request): JsonResponse
     {
         $book = DB::transaction(function () use ($request): Book {
-            $book = Book::create($request->bookAttributes());
+            $book = $request->user()->books()->create($request->bookAttributes());
             $book->genres()->sync($request->genreIds());
 
             return $book;
@@ -77,6 +77,8 @@ class BookController extends Controller
 
     public function destroy(Book $book): JsonResponse
     {
+        $this->authorize('delete', $book);
+
         $book->delete();
 
         return response()->json(null, 204);
