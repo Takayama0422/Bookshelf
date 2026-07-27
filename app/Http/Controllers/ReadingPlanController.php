@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ReadingPlanStatus;
 use App\Http\Requests\IndexReadingPlanRequest;
 use App\Http\Requests\StoreReadingPlanRequest;
 use App\Http\Requests\UpdateReadingPlanRequest;
 use App\Models\Book;
 use App\Models\ReadingPlan;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -57,7 +59,7 @@ class ReadingPlanController extends Controller
             $request->user()->readingPlans()->create([
                 'book_id' => $request->validated('book_id'),
                 'target_date' => $request->validated('target_date'),
-                'status' => ReadingPlan::STATUS_IN_PROGRESS,
+                'status' => ReadingPlanStatus::IN_PROGRESS,
             ]);
         });
 
@@ -83,7 +85,7 @@ class ReadingPlanController extends Controller
         DB::transaction(function () use ($request, $readingPlan): void {
             User::query()->whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
 
-            if ($readingPlan->status === ReadingPlan::STATUS_IN_PROGRESS) {
+            if ($readingPlan->status === ReadingPlanStatus::IN_PROGRESS) {
                 $this->ensureNoInProgressDuplicate(
                     $request->user()->id,
                     (int) $request->validated('book_id'),
@@ -103,12 +105,14 @@ class ReadingPlanController extends Controller
     {
         $this->authorize('complete', $readingPlan);
 
-        if ($readingPlan->status !== ReadingPlan::STATUS_COMPLETED) {
-            $readingPlan->update([
-                'status' => ReadingPlan::STATUS_COMPLETED,
-                'completed_at' => now(),
-            ]);
-        }
+        DB::transaction(function () use ($readingPlan): void {
+            if ($readingPlan->status !== ReadingPlanStatus::COMPLETED) {
+                $readingPlan->update([
+                    'status' => ReadingPlanStatus::COMPLETED,
+                    'completed_at' => now(),
+                ]);
+            }
+        });
 
         return redirect()
             ->route('reading-plans.index')
@@ -119,14 +123,14 @@ class ReadingPlanController extends Controller
     {
         $this->authorize('delete', $readingPlan);
 
-        $readingPlan->delete();
+        DB::transaction(fn (): bool => $readingPlan->delete());
 
         return redirect()
             ->route('reading-plans.index')
             ->with('success', '読書計画を削除しました。');
     }
 
-    private function booksForForm()
+    private function booksForForm(): Collection
     {
         return Book::query()->orderBy('title')->orderBy('id')->get(['id', 'title']);
     }

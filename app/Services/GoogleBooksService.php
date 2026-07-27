@@ -11,15 +11,13 @@ use Throwable;
 
 class GoogleBooksService
 {
-    private const ENDPOINT = 'https://www.googleapis.com/books/v1/volumes';
-
     /** @return array{title: string, author: string, published_date: ?string, description: string, image_url: string, isbn: string} */
     public function search(string $isbn): array
     {
         $normalizedIsbn = IsbnNormalizer::normalize($isbn);
 
         try {
-            $response = Http::timeout(5)->get(self::ENDPOINT, [
+            $response = Http::timeout((int) config('services.google_books.timeout'))->get(config('services.google_books.endpoint'), [
                 'q' => 'isbn:'.$normalizedIsbn,
             ]);
         } catch (ConnectionException $exception) {
