@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateReadingPlanRequest;
 use App\Models\Book;
 use App\Models\ReadingPlan;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +18,12 @@ use Illuminate\View\View;
 
 class ReadingPlanController extends Controller
 {
+    /**
+     * 認可されたユーザーの読書計画を状態で絞り込み、一覧表示する。
+     *
+     * @param  IndexReadingPlanRequest  $request  検証済みの状態条件を保持するリクエスト
+     * @return View 読書計画、絞り込み条件、状態一覧を含む一覧画面
+     */
     public function index(IndexReadingPlanRequest $request): View
     {
         $plans = $request->user()
@@ -52,6 +59,7 @@ class ReadingPlanController extends Controller
      * @param  StoreReadingPlanRequest  $request  検証済みの読書計画登録内容
      * @return RedirectResponse 読書計画一覧へのリダイレクトレスポンス
      *
+     * @throws AuthorizationException 読書計画の作成が許可されていない場合
      * @throws ValidationException 同じ書籍の進行中計画が既に存在する場合
      */
     public function store(StoreReadingPlanRequest $request): RedirectResponse
@@ -97,6 +105,7 @@ class ReadingPlanController extends Controller
      * @param  ReadingPlan  $readingPlan  更新対象の読書計画
      * @return RedirectResponse 読書計画一覧へのリダイレクトレスポンス
      *
+     * @throws AuthorizationException 読書計画の更新が許可されていない場合
      * @throws ValidationException 同じ書籍の別の進行中計画が存在する場合
      */
     public function update(UpdateReadingPlanRequest $request, ReadingPlan $readingPlan): RedirectResponse
@@ -129,6 +138,8 @@ class ReadingPlanController extends Controller
      *
      * @param  ReadingPlan  $readingPlan  読了状態へ遷移させる読書計画
      * @return RedirectResponse 読書計画一覧へのリダイレクトレスポンス
+     *
+     * @throws AuthorizationException 読書計画の読了操作が許可されていない場合
      */
     public function complete(ReadingPlan $readingPlan): RedirectResponse
     {
@@ -148,6 +159,14 @@ class ReadingPlanController extends Controller
             ->with('success', '読書計画を読了にしました。');
     }
 
+    /**
+     * 所有者として削除を許可された読書計画をトランザクション内で削除する。
+     *
+     * @param  ReadingPlan  $readingPlan  削除対象の読書計画
+     * @return RedirectResponse 読書計画一覧へのリダイレクトレスポンス
+     *
+     * @throws AuthorizationException 読書計画の削除が許可されていない場合
+     */
     public function destroy(ReadingPlan $readingPlan): RedirectResponse
     {
         $this->authorize('delete', $readingPlan);
@@ -166,6 +185,7 @@ class ReadingPlanController extends Controller
 
     /**
      * 指定ユーザーと書籍の組み合わせに進行中の読書計画が重複していないことを確認する。
+     * 戻り値はなく、重複時はバリデーション例外を送出する。
      *
      * @param  int  $userId  確認対象のユーザーID
      * @param  int  $bookId  確認対象の書籍ID

@@ -8,6 +8,11 @@ use Illuminate\Validation\Rule;
 
 class StoreReadingPlanRequest extends FormRequest
 {
+    /**
+     * 認証ユーザーが読書計画を作成できる場合のみ許可する。
+     *
+     * @return bool 作成を許可する場合はtrue
+     */
     public function authorize(): bool
     {
         return $this->user()?->can('create', ReadingPlan::class) ?? false;

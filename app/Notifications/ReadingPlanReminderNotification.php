@@ -16,13 +16,22 @@ class ReadingPlanReminderNotification extends Notification
 
     public const TYPE_OVERDUE = 'reading_plan_overdue';
 
+    /**
+     * 読書計画と通知種別を保持するDatabase通知を生成する。
+     *
+     * @param  ReadingPlan  $readingPlan  通知対象の読書計画
+     * @param  string  $reminderType  3日前・当日・期限超過の通知種別
+     */
     public function __construct(
         private readonly ReadingPlan $readingPlan,
         private readonly string $reminderType,
     ) {}
 
     /**
-     * @return list<string>
+     * 通知の配信先としてDatabase channelを指定する。
+     *
+     * @param  object  $notifiable  通知を受け取るユーザー
+     * @return list<string> Database channelの一覧
      */
     public function via(object $notifiable): array
     {
@@ -30,7 +39,10 @@ class ReadingPlanReminderNotification extends Notification
     }
 
     /**
-     * @return array<string, mixed>
+     * Database通知へ保存するメッセージ、通知種別、計画ID、書籍IDを生成する。
+     *
+     * @param  object  $notifiable  通知を受け取るユーザー
+     * @return array<string, mixed> Database channelへ保存する通知payload
      */
     public function toArray(object $notifiable): array
     {
@@ -42,6 +54,11 @@ class ReadingPlanReminderNotification extends Notification
         ];
     }
 
+    /**
+     * 通知種別に対応する期限メッセージを返す。
+     *
+     * @return string 3日前・当日・期限超過、または既定の通知メッセージ
+     */
     private function message(): string
     {
         return match ($this->reminderType) {

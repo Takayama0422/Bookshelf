@@ -8,6 +8,9 @@ use Illuminate\Support\Collection;
 class ReadingReportService
 {
     /**
+     * ユーザーが登録した書籍、お気に入り、レビューを集計して読書レポートを生成する。
+     *
+     * @param  User  $user  集計対象のユーザー
      * @return array{
      *     book_count: int,
      *     favorite_count: int,
@@ -36,6 +39,9 @@ class ReadingReportService
     }
 
     /**
+     * ユーザーのレビュー件数を評価5から1まで集計し、該当なしの評価も0件で返す。
+     *
+     * @param  User  $user  集計対象のユーザー
      * @return array<int, int>
      */
     private function ratingCountsFor(User $user): array

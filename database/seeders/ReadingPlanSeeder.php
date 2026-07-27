@@ -10,6 +10,12 @@ use Illuminate\Support\Carbon;
 
 class ReadingPlanSeeder extends Seeder
 {
+    /**
+     * 応用機能の確認に必要な進行中・読了・失効済みの読書計画を登録する。
+     *
+     * 既存のユーザーと書籍を特定し、ユーザー・書籍の組み合わせごとに計画を更新または作成する。
+     * 戻り値はない。
+     */
     public function run(): void
     {
         $today = Carbon::today();

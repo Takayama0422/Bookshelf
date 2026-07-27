@@ -8,6 +8,11 @@ use Illuminate\Validation\Rule;
 
 class IndexReadingPlanRequest extends FormRequest
 {
+    /**
+     * 認証ユーザーが読書計画一覧を表示できる場合のみ許可する。
+     *
+     * @return bool 一覧表示を許可する場合はtrue
+     */
     public function authorize(): bool
     {
         return $this->user()?->can('viewAny', ReadingPlan::class) ?? false;

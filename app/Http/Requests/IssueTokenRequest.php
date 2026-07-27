@@ -6,6 +6,11 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class IssueTokenRequest extends FormRequest
 {
+    /**
+     * 資格情報をトークン発行処理で検証するため、リクエスト自体は常に許可する。
+     *
+     * @return bool 常にtrue
+     */
     public function authorize(): bool
     {
         return true;

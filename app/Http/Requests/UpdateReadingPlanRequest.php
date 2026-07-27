@@ -8,6 +8,11 @@ use Illuminate\Validation\Rule;
 
 class UpdateReadingPlanRequest extends FormRequest
 {
+    /**
+     * ルートの読書計画が存在し、認証ユーザーが所有者である場合のみ更新を許可する。
+     *
+     * @return bool 更新を許可する場合はtrue
+     */
     public function authorize(): bool
     {
         $readingPlan = $this->route('reading_plan');
