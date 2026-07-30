@@ -36,7 +36,7 @@ Route::middleware('auth')->group(function () {
 Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/reading-report', ReadingReportController::class)->name('reading-report.show');
+    Route::get('/reports', ReadingReportController::class)->name('reading-report.show');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
     Route::post('/reading-plans/{reading_plan}/complete', [ReadingPlanController::class, 'complete'])->name('reading-plans.complete');
