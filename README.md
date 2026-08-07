@@ -102,14 +102,16 @@ erDiagram
     }
 
     favorites {
-        bigint user_id PK, FK
-        bigint book_id PK, FK
+        bigint id PK
+        bigint user_id FK
+        bigint book_id FK
         timestamp created_at
     }
 
     review_likes {
-        bigint user_id PK, FK
-        bigint review_id PK, FK
+        bigint id PK
+        bigint user_id FK
+        bigint review_id FK
         timestamp created_at
     }
 
@@ -159,39 +161,23 @@ erDiagram
 - 関連する親データが削除された場合、migrationに従って関連データはcascade deleteされます。
 - `books.isbn`、`genres.name`、`users.email`、`personal_access_tokens.token` は一意です。
 - `reviews` は `user_id` と `book_id` の組み合わせが一意です。
-- `book_genre`、`favorites`、`review_likes` は複合主キーで重複を防止します。
+- `book_genre` は複合主キー、`favorites` と `review_likes` はid主キーと複合uniqueで重複を防止します。
 - `reading_plans` は `user_id`、`book_id`、`status` の検索用インデックスを持ち、進行中計画の重複はFormRequestと保存処理で防止します。
 - `notifications` はLaravel Database Notificationのpolymorphic recipientを使用します。
 
 ## 環境構築手順
 
-### 1. プロジェクト作成
+完成済みリポジトリを取得して起動します。Dockerが利用できる環境で実行してください。
 
-以下のDockerコマンドを実行して、Laravel 10.xを明示的に指定してプロジェクトを作成します。
-
-```bash
-docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php85-composer:latest composer create-project laravel/laravel:^10.0 bookshelf-app
-```
-
-プロジェクト作成後、`bookshelf-app` ディレクトリに移動し、Laravel Sailをインストールします。
+### 1. リポジトリ取得と.env作成
 
 ```bash
-cd bookshelf-app
-
-docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php85-composer:latest composer require laravel/sail --dev
-
-docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html -e COMPOSER_CACHE_DIR=/tmp/composer_cache laravelsail/php85-composer:latest php artisan sail:install --with=mysql
+git clone https://github.com/Takayama0422/Bookshelf.git
+cd Bookshelf
+cp .env.example .env
 ```
 
-M1/M2/M3 Mac（Apple Silicon）で `sail up -d` 実行時に `no matching manifest for linux/arm64/v8` エラーが発生した場合は、`compose.yaml` の `mysql` サービスに以下を追加してください。
-
-```yaml
-platform: 'linux/amd64'
-```
-
-### 2. `.env`設定
-
-`.env` ファイルを開き、データベース接続情報が以下と一致していることを確認します。
+.env のDB接続先とGoogle Books APIキーを、SailのMySQLサービス名に合わせて設定します。
 
 ```dotenv
 DB_CONNECTION=mysql
@@ -200,128 +186,75 @@ DB_PORT=3306
 DB_DATABASE=laravel
 DB_USERNAME=sail
 DB_PASSWORD=password
+GOOGLE_BOOKS_API_KEY=
 ```
 
-`DB_HOST` は `localhost` や `127.0.0.1` ではなく、Dockerコンテナ名である `mysql` を指定します。
-
-Google Books APIのISBN検索は、追加のAPIキーなしで公開エンドポイントを利用します。API認証にはSanctumを使用するため、`.env` のセッション・ドメイン設定はLaravel Sail標準構成に合わせてください。
-
-### 3. Tailwind CSS・Alpine.jsのセットアップ
-
-本プロジェクトでは、フロントエンドのスタイリングにTailwind CSSとAlpine.jsを使用します。Sailコンテナを起動してから、以下を実行してください。起動していない場合は `./vendor/bin/sail up -d` を実行します。
+### 2. Composer依存関係のインストール
 
 ```bash
-./vendor/bin/sail npm install
-./vendor/bin/sail npm run dev
+composer install
 ```
 
-`resources/js/app.js` でAlpine.jsを読み込みます。画面操作に必要なため、Alpine.jsは削除しないでください。
-
-### 4. phpMyAdminの設定
-
-`compose.yaml` を開き、必要に応じて `phpmyadmin` サービスを追加してください。
-
-```yaml
-phpmyadmin:
-    image: 'phpmyadmin:latest'
-    ports:
-        - '${FORWARD_PHPMYADMIN_PORT:-8080}:80'
-    environment:
-        PMA_HOST: mysql
-        PMA_USER: '${DB_USERNAME}'
-        PMA_PASSWORD: '${DB_PASSWORD}'
-    networks:
-        - sail
-    depends_on:
-        - mysql
-```
-
-### 5. Sail起動
+### 3. Laravel Sailの起動
 
 ```bash
 ./vendor/bin/sail up -d
 ```
 
-必要であれば、シェルに以下のエイリアスを追加します。
-
-```bash
-echo "alias sail='[ -f sail ] && bash sail || bash vendor/bin/sail'" >> ~/.zshrc
-exec $SHELL
-```
-
-### 6. アプリケーションキー生成
-
-ルートディレクトリで以下のコマンドを実行します。
+### 4. アプリケーションキー生成
 
 ```bash
 ./vendor/bin/sail artisan key:generate
 ```
 
-### 7. マイグレーション・Seeder実行
-
-以下のコマンドでテーブルを作成し、初期データを投入します。
+### 5. マイグレーションとSeeder
 
 ```bash
 ./vendor/bin/sail artisan migrate --seed
 ```
 
-既存のデータベースをリセットして同じ初期データを再投入する場合は、以下を実行してください。
+既存DBを再構築する場合は、開発用データが破棄されることを確認してから実行します。
 
 ```bash
 ./vendor/bin/sail artisan migrate:fresh --seed
 ```
 
-Seeder実行後の基準件数は以下です。
+初期ユーザーのパスワードは password です。
 
-| テーブル | 件数 |
-| --- | ---: |
-| users | 5 |
-| genres | 10 |
-| books | 11 |
-| reviews | 32 |
-| favorites | 15 |
-| review_likes | 24 |
-| reading_plans | 6 |
-| notifications | 0 |
-
-初期ユーザーのパスワードは共通で `password` です。
-
-#### 日本語化（バリデーション・認証メッセージ）
-
-`config/app.php` の `locale` を `ja` にし、`lang/ja/` にメッセージファイルを手動配置して行います。
-
-`laravel-lang/lang` などの `laravel-lang/*` 系パッケージ（`composer require laravel-lang/...`）は導入しないでください。同系パッケージは2026年5月のサプライチェーン攻撃でマルウェア配布に悪用された経緯があります。
-
-### 8. ポート設定
-
-必要に応じて、アプリケーション、MySQL、phpMyAdmin、Viteのポートを `.env` で変更できます。
-
-```dotenv
-APP_PORT=80
-FORWARD_DB_PORT=3306
-FORWARD_PHPMYADMIN_PORT=8080
-VITE_PORT=5173
-```
-
-### 9. 最終確認コマンド
-
-品質確認では以下を実行します。
+### 6. フロントエンド依存関係とビルド
 
 ```bash
-./vendor/bin/sail artisan migrate:fresh --seed
+./vendor/bin/sail npm install
+./vendor/bin/sail npm run build
+```
+
+開発中にViteを起動する場合は、別ターミナルで以下を実行します。
+
+```bash
+./vendor/bin/sail npm run dev
+```
+
+### 7. アプリ・API・テストの実行確認
+
+アプリケーションは http://localhost、APIは http://localhost/api/v1/books で確認できます。
+
+```bash
+./vendor/bin/sail artisan route:list
 ./vendor/bin/sail artisan test
 ./vendor/bin/sail pint --test
-./vendor/bin/sail artisan route:list
-./vendor/bin/sail artisan test --coverage
 ```
 
-カバレッジ取得にはXdebugまたはPCOVが必要です。環境にドライバがない場合は、通常のテスト結果を合格条件として扱い、取得できない理由を記録します。
+カバレッジを取得する場合は、XdebugまたはPCOVが有効な環境で実行します。
+
+```bash
+./vendor/bin/sail artisan test --coverage
+```
 
 ## 使用技術
 
 | 分類 | 技術 |
 | --- | --- |
-| バックエンド | PHP 8.5、Laravel 10 |
+| バックエンド | PHP 8.2、Laravel 10 |
 | フロントエンド | Blade、Vite、Tailwind CSS、Alpine.js |
 | データベース | MySQL 8.4 |
 | 開発環境 | Laravel Sail、Docker、phpMyAdmin |
@@ -339,7 +272,7 @@ VITE_PORT=5173
 | 書籍一覧 | `/`、`/books` | 不要 | 書籍一覧、検索、ジャンル絞り込み、並び替え |
 | 書籍詳細 | `/books/{book}` | 不要 | 書籍詳細、ジャンル、レビュー、レビューいいね数 |
 | 書籍登録 | `/books/create` | 必要 | 書籍を登録する。ISBN検索結果をフォームに反映できる |
-| ISBN検索 | `/books/isbn-search?isbn={isbn}` | 必要 | Google Books APIから書籍情報を取得する |
+| ISBN検索 | `GET /books/isbn/{isbn}` | 必要 | Google Books APIから書籍情報を取得する |
 | 書籍編集 | `/books/{book}/edit` | 所有者のみ | 所有書籍を編集する |
 | お気に入り一覧 | `/favorites` | 必要 | 自分のお気に入り書籍を表示する |
 | ジャンル一覧・詳細 | `/genres`、`/genres/{genre}` | 必要 | ジャンル管理とジャンル別書籍一覧 |
@@ -353,7 +286,7 @@ VITE_PORT=5173
 以下のコマンドで、進行中の読書計画を処理します。
 
 ```bash
-./vendor/bin/sail artisan reading-plans:process
+./vendor/bin/sail artisan reading-plans:run-daily
 ```
 
 処理内容は以下です。
@@ -363,7 +296,7 @@ VITE_PORT=5173
 - 目標読了日を過ぎた計画に期限後通知を作成し、状態を `expired` にする
 - `reminded_three_days_at`、`reminded_due_at`、`reminded_overdue_at` により重複通知を防止する
 
-スケジューラでは `reading-plans:process` を毎日 00:00 に `withoutOverlapping()` 付きで実行します。
+スケジューラでは `reading-plans:run-daily` を毎日20:00に実行します。
 
 ## APIエンドポイント一覧
 
@@ -371,7 +304,7 @@ VITE_PORT=5173
 | --- | --- | --- | --- |
 | GET | `/api/user` | `auth:sanctum` | 認証済みユーザー情報を返す |
 | POST | `/api/tokens` | 不要 | `email`、`password`、`token_name`を受け付け、SanctumのBearerトークンを発行する |
-| GET | `/api/v1/books` | 不要 | 書籍一覧を取得する。`keyword`、`genre`、`sort`、`page`、`per_page`に対応する |
+| GET | `/api/v1/books` | 不要 | 書籍一覧を取得する。`keyword`、`genre_id`、`sort`、`page`、`per_page`に対応する |
 | GET | `/api/v1/books/{book}` | 不要 | 書籍詳細、ジャンル、レビュー投稿者名、評価、コメント、投稿日時を取得する |
 | POST | `/api/v1/books` | `auth:sanctum` | 認証ユーザーを登録者として書籍を新規登録する |
 | PUT/PATCH | `/api/v1/books/{book}` | `auth:sanctum` + `BookPolicy` | 所有者のみ書籍を更新できる |
@@ -395,7 +328,7 @@ curl -X POST http://localhost/api/v1/books \
   -H "Accept: application/json" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <token>" \
-  -d '{"title":"API登録書籍","author":"著者名","isbn":"9784000000999","published_date":"2020-01-01","description":"説明文","image_url":"https://example.com/cover.jpg","genre_ids":[1]}'
+  -d '{"title":"API登録書籍","author":"著者名","isbn":"9784000000999","published_date":"2020-01-01","description":"説明文","image_url":"https://example.com/cover.jpg","genres":[1]}'
 ```
 
 ### API共通仕様

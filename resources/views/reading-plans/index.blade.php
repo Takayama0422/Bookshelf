@@ -50,8 +50,8 @@
                                     <tr>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">書籍タイトル</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">目標読了日</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">完了日</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ステータス</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">作成日時</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
                                     </tr>
                                 </thead>
@@ -60,13 +60,18 @@
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap">{{ $plan->book->title }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap">{{ $plan->target_date->toDateString() }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">{{ $plan->statusLabel() }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">{{ $plan->created_at->format('Y-m-d H:i') }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">{{ $plan->completed_at?->toDateString() ?? '' }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full
+                                                    {{ $plan->status === \App\Enums\ReadingPlanStatus::Completed ? 'bg-green-100 text-green-800' : ($plan->status === \App\Enums\ReadingPlanStatus::Expired ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800') }}">
+                                                    {{ $plan->statusLabel() }}
+                                                </span>
+                                            </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm">
                                                 <a href="{{ route('reading-plans.edit', $plan) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">編集</a>
                                                 <form action="{{ route('reading-plans.complete', $plan) }}" method="POST" class="inline" novalidate>
                                                     @csrf
-                                                    <button type="submit" class="text-green-600 hover:text-green-900 mr-3">読了</button>
+                                                    <button type="submit" class="text-green-600 hover:text-green-900 mr-3">読了する</button>
                                                 </form>
                                                 <form action="{{ route('reading-plans.destroy', $plan) }}" method="POST" class="inline" onsubmit="return confirm('本当に削除しますか？');" novalidate>
                                                     @csrf

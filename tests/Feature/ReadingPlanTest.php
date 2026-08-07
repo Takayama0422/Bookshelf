@@ -7,6 +7,7 @@ use App\Models\Book;
 use App\Models\ReadingPlan;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
@@ -105,12 +106,12 @@ class ReadingPlanTest extends TestCase
             ->get(route('reading-plans.index', ['status' => ReadingPlan::STATUS_COMPLETED]))
             ->assertOk()
             ->assertSee('読了した本')
-            ->assertSee('読了')
+            ->assertSee('完了')
             ->assertDontSee('進行中の本')
             ->assertDontSee('期限切れの本');
     }
 
-    public function test_reading_plan_can_be_updated_without_editing_status(): void
+    public function test_reading_plan_update_changes_only_target_date(): void
     {
         $user = User::factory()->create();
         $firstBook = Book::factory()->create();
@@ -124,7 +125,6 @@ class ReadingPlanTest extends TestCase
 
         $this->actingAs($user)
             ->put(route('reading-plans.update', $plan), [
-                'book_id' => $secondBook->id,
                 'target_date' => today()->addDays(10)->toDateString(),
                 'status' => ReadingPlan::STATUS_COMPLETED,
             ])
@@ -132,7 +132,7 @@ class ReadingPlanTest extends TestCase
 
         $this->assertDatabaseHas('reading_plans', [
             'id' => $plan->id,
-            'book_id' => $secondBook->id,
+            'book_id' => $firstBook->id,
             'target_date' => today()->addDays(10)->toDateString(),
             'status' => ReadingPlan::STATUS_IN_PROGRESS,
         ]);
@@ -152,7 +152,8 @@ class ReadingPlanTest extends TestCase
 
         $this->actingAs($user)
             ->post(route('reading-plans.complete', $plan))
-            ->assertRedirect(route('reading-plans.index'));
+            ->assertRedirect(route('reading-plans.index'))
+            ->assertSessionHas('success', '読書計画を完了しました。');
 
         $plan->refresh();
 
@@ -163,16 +164,68 @@ class ReadingPlanTest extends TestCase
         Carbon::setTestNow();
     }
 
+    public function test_completed_plan_cannot_be_completed_again(): void
+    {
+        $user = User::factory()->create();
+        $plan = ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+            'status' => ReadingPlan::STATUS_COMPLETED,
+            'completed_at' => now()->subDay(),
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('reading-plans.complete', $plan))
+            ->assertForbidden();
+    }
+
+    public function test_expired_plan_update_restores_in_progress_without_changing_book(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->create();
+        $plan = ReadingPlan::factory()->create([
+            'user_id' => $user->id,
+            'book_id' => $book->id,
+            'status' => ReadingPlan::STATUS_EXPIRED,
+            'expired_at' => now()->subDay(),
+        ]);
+
+        $this->actingAs($user)
+            ->put(route('reading-plans.update', $plan), [
+                'book_id' => Book::factory()->create()->id,
+                'target_date' => today()->addDays(5)->toDateString(),
+            ])
+            ->assertRedirect(route('reading-plans.index'));
+
+        $plan->refresh();
+        $this->assertSame($book->id, $plan->book_id);
+        $this->assertSame(ReadingPlanStatus::InProgress, $plan->status);
+        $this->assertNull($plan->expired_at);
+    }
+
     public function test_reading_plan_can_be_deleted(): void
     {
         $user = User::factory()->create();
         $plan = ReadingPlan::factory()->create(['user_id' => $user->id]);
+        DatabaseNotification::create([
+            'id' => (string) str()->uuid(),
+            'type' => 'App\\Notifications\\PlanReminderNotification',
+            'notifiable_type' => User::class,
+            'notifiable_id' => $user->id,
+            'data' => [
+                'plan_id' => $plan->id,
+                'book_title' => $plan->book->title,
+                'timing' => 'due_today',
+                'title' => '通知タイトル',
+                'body' => '通知本文',
+            ],
+        ]);
 
         $this->actingAs($user)
             ->delete(route('reading-plans.destroy', $plan))
             ->assertRedirect(route('reading-plans.index'));
 
         $this->assertDatabaseMissing('reading_plans', ['id' => $plan->id]);
+        $this->assertDatabaseMissing('notifications', ['notifiable_id' => $user->id]);
     }
 
     public function test_other_user_cannot_update_complete_or_delete_reading_plan(): void

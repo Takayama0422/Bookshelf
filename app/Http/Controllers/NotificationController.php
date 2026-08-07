@@ -42,7 +42,7 @@ class NotificationController extends Controller
      *
      * @throws AuthorizationException 通知の更新が許可されていない場合
      */
-    public function read(DatabaseNotification $notification): RedirectResponse
+    public function markAsRead(DatabaseNotification $notification): RedirectResponse
     {
         $this->authorize('update', $notification);
 

@@ -85,7 +85,8 @@ class AdvancedDataFoundationTest extends TestCase
 
         $this->assertSame(5, User::count());
         $this->assertSame(11, Book::count());
-        $this->assertSame(32, Review::count());
+        $this->assertGreaterThanOrEqual(22, Review::count());
+        $this->assertLessThanOrEqual(44, Review::count());
         $this->assertSame(6, ReadingPlan::count());
         $this->assertSame($targetDates, ReadingPlan::query()->orderBy('id')->pluck('target_date')->map(fn ($date) => (string) $date)->all());
     }

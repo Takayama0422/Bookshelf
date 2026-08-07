@@ -25,20 +25,13 @@ Route::post('/tokens', [TokenController::class, 'store'])->name('api.tokens.stor
 
 Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::apiResource('books', BookController::class)->missing(function (): JsonResponse {
-        return response()->json([
-            'message' => '書籍が見つかりません。',
-            'errors' => [
-                'book' => ['指定された書籍が見つかりません。'],
-            ],
-        ], 404);
+        return response()->json(['error' => '書籍が見つかりませんでした。'], 404);
     })->only(['index', 'show']);
 
-    Route::apiResource('books', BookController::class)->missing(function (): JsonResponse {
-        return response()->json([
-            'message' => '書籍が見つかりません。',
-            'errors' => [
-                'book' => ['指定された書籍が見つかりません。'],
-            ],
-        ], 404);
-    })->only(['store', 'update', 'destroy'])->middleware('auth:sanctum');
+    Route::apiResource('books', BookController::class)
+        ->missing(function (): JsonResponse {
+            return response()->json(['error' => '書籍が見つかりませんでした。'], 404);
+        })
+        ->only(['store', 'update', 'destroy'])
+        ->middleware('auth:sanctum');
 });

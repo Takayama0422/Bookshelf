@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Exceptions\IsbnApiResponseException;
 use App\Exceptions\IsbnApiUnavailableException;
 use App\Exceptions\IsbnBookNotFoundException;
+use App\Exceptions\IsbnQuotaExceededException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;
@@ -25,16 +26,25 @@ class GoogleBooksService
      */
     public function search(string $isbn): array
     {
-        $normalizedIsbn = IsbnNormalizer::normalize($isbn);
+        $normalizedIsbn = IsbnNormalizer::sanitize($isbn);
+        if (preg_match('/^\d{13}$/', $normalizedIsbn) !== 1) {
+            throw new InvalidArgumentException('Invalid ISBN-13.');
+        }
 
         try {
-            $response = Http::timeout((int) config('services.google_books.timeout'))->get(config('services.google_books.endpoint'), [
-                'q' => 'isbn:'.$normalizedIsbn,
-            ]);
+            $parameters = ['q' => 'isbn:'.$normalizedIsbn];
+            if (config('services.google.books_api_key')) {
+                $parameters['key'] = config('services.google.books_api_key');
+            }
+            $response = Http::timeout((int) config('services.google_books.timeout'))->get(config('services.google_books.endpoint'), $parameters);
         } catch (ConnectionException $exception) {
             throw new IsbnApiUnavailableException(previous: $exception);
         } catch (Throwable $exception) {
             throw new IsbnApiUnavailableException(previous: $exception);
+        }
+
+        if ($response->status() === 429) {
+            throw new IsbnQuotaExceededException;
         }
 
         if ($response->serverError() || $response->clientError() || ! $response->successful()) {

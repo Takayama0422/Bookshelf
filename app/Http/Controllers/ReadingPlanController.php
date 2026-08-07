@@ -29,9 +29,15 @@ class ReadingPlanController extends Controller
         $plans = $request->user()
             ->readingPlans()
             ->with('book')
-            ->when($request->status(), fn ($query, string $status) => $query->where('status', $status))
-            ->latest()
-            ->orderByDesc('id')
+            ->when($request->status(), function ($query, string $status): void {
+                match ($status) {
+                    ReadingPlanStatus::InProgress->value => $query->active(),
+                    ReadingPlanStatus::Completed->value => $query->completed(),
+                    ReadingPlanStatus::Expired->value => $query->expired(),
+                };
+            })
+            ->orderBy('target_date')
+            ->orderBy('id')
             ->paginate(10)
             ->withQueryString();
 
@@ -77,13 +83,13 @@ class ReadingPlanController extends Controller
             $request->user()->readingPlans()->create([
                 'book_id' => $request->validated('book_id'),
                 'target_date' => $request->validated('target_date'),
-                'status' => ReadingPlanStatus::IN_PROGRESS,
+                'status' => ReadingPlanStatus::InProgress,
             ]);
         });
 
         return redirect()
             ->route('reading-plans.index')
-            ->with('success', '読書計画を登録しました。');
+            ->with('success', '読書計画を作成しました。');
     }
 
     public function edit(ReadingPlan $readingPlan): View
@@ -115,15 +121,15 @@ class ReadingPlanController extends Controller
         DB::transaction(function () use ($request, $readingPlan): void {
             User::query()->whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
 
-            if ($readingPlan->status === ReadingPlanStatus::IN_PROGRESS) {
-                $this->ensureNoInProgressDuplicate(
-                    $request->user()->id,
-                    (int) $request->validated('book_id'),
-                    $readingPlan->id
-                );
+            $attributes = $request->readingPlanAttributes();
+            if ($readingPlan->status === ReadingPlanStatus::Expired) {
+                $attributes['status'] = ReadingPlanStatus::InProgress;
+                $attributes['expired_at'] = null;
+                $attributes['reminded_three_days_at'] = null;
+                $attributes['reminded_due_at'] = null;
+                $attributes['reminded_overdue_at'] = null;
             }
-
-            $readingPlan->update($request->readingPlanAttributes());
+            $readingPlan->update($attributes);
         });
 
         return redirect()
@@ -143,20 +149,18 @@ class ReadingPlanController extends Controller
      */
     public function complete(ReadingPlan $readingPlan): RedirectResponse
     {
-        $this->authorize('complete', $readingPlan);
+        $this->authorize('update', $readingPlan);
 
         DB::transaction(function () use ($readingPlan): void {
-            if ($readingPlan->status !== ReadingPlanStatus::COMPLETED) {
-                $readingPlan->update([
-                    'status' => ReadingPlanStatus::COMPLETED,
-                    'completed_at' => now(),
-                ]);
-            }
+            $readingPlan->update([
+                'status' => ReadingPlanStatus::Completed,
+                'completed_at' => now(),
+            ]);
         });
 
         return redirect()
             ->route('reading-plans.index')
-            ->with('success', '読書計画を読了にしました。');
+            ->with('success', '読書計画を完了しました。');
     }
 
     /**
@@ -171,7 +175,12 @@ class ReadingPlanController extends Controller
     {
         $this->authorize('delete', $readingPlan);
 
-        DB::transaction(fn (): bool => $readingPlan->delete());
+        DB::transaction(function () use ($readingPlan): void {
+            $readingPlan->user->notifications()
+                ->where('data->plan_id', $readingPlan->id)
+                ->delete();
+            $readingPlan->delete();
+        });
 
         return redirect()
             ->route('reading-plans.index')
@@ -198,7 +207,7 @@ class ReadingPlanController extends Controller
         $exists = ReadingPlan::query()
             ->where('user_id', $userId)
             ->where('book_id', $bookId)
-            ->where('status', ReadingPlan::STATUS_IN_PROGRESS)
+            ->where('status', ReadingPlanStatus::InProgress)
             ->when($ignorePlanId, fn ($query, int $id) => $query->whereKeyNot($id))
             ->exists();
 

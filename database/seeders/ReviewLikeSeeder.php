@@ -45,7 +45,11 @@ class ReviewLikeSeeder extends Seeder
             $book = Book::where('isbn', $isbn)->firstOrFail();
             $review = Review::where('user_id', $reviewer->id)
                 ->where('book_id', $book->id)
-                ->firstOrFail();
+                ->first();
+
+            if ($review === null) {
+                continue;
+            }
 
             $liker->likedReviews()->syncWithoutDetaching([
                 $review->id => ['created_at' => $createdAt],

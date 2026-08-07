@@ -25,8 +25,8 @@ class UserManagementTest extends TestCase
         $this->post('/register', [
             'name' => '山田 太郎',
             'email' => 'taro@example.com',
-            'password' => 'secret',
-            'password_confirmation' => 'secret',
+            'password' => 'secret123',
+            'password_confirmation' => 'secret123',
         ])->assertRedirect('/');
 
         $this->assertAuthenticated();
@@ -43,10 +43,9 @@ class UserManagementTest extends TestCase
         $this->from('/register')->post('/register', [
             'name' => '山田 太郎',
             'email' => 'taro@example.com',
-            'password' => 'secret',
-            'password_confirmation' => 'secret',
-        ])->assertRedirect('/register')
-            ->assertSessionHasErrors('email');
+            'password' => 'secret123',
+            'password_confirmation' => 'secret123',
+        ])->assertRedirect('/register')->assertSessionHasErrors('email');
     }
 
     public function test_registration_rejects_invalid_email_format(): void
@@ -54,16 +53,12 @@ class UserManagementTest extends TestCase
         $this->from('/register')->post('/register', [
             'name' => '山田 太郎',
             'email' => 'invalid-email',
-            'password' => 'secret',
-            'password_confirmation' => 'secret',
-        ])->assertRedirect('/register')
-            ->assertSessionHasErrors('email');
+            'password' => 'secret123',
+            'password_confirmation' => 'secret123',
+        ])->assertRedirect('/register')->assertSessionHasErrors('email');
 
         $this->assertGuest();
-        $this->assertDatabaseMissing('users', [
-            'name' => '山田 太郎',
-            'email' => 'invalid-email',
-        ]);
+        $this->assertDatabaseMissing('users', ['email' => 'invalid-email']);
     }
 
     public function test_registration_validation_errors_can_be_seen_in_japanese(): void
@@ -71,38 +66,32 @@ class UserManagementTest extends TestCase
         $response = $this->from('/register')->post('/register', [
             'name' => '',
             'email' => '',
-            'password' => 'secret',
+            'password' => 'secret123',
             'password_confirmation' => 'different',
         ]);
 
-        $response->assertRedirect('/register')
-            ->assertSessionHasErrors(['name', 'email', 'password']);
+        $response->assertRedirect('/register')->assertSessionHasErrors(['name', 'email', 'password']);
 
         $this->followRedirects($response)
-            ->assertSee('お名前は必ず入力してください。')
-            ->assertSee('メールアドレスは必ず入力してください。')
-            ->assertSee('パスワードが確認用と一致しません。');
+            ->assertSee('お名前を入力してください。')
+            ->assertSee('メールアドレスを入力してください。')
+            ->assertSee('パスワードと一致しません。');
     }
 
     public function test_login_screen_can_be_rendered(): void
     {
-        $this->get('/login')
-            ->assertOk()
-            ->assertSee('メールアドレス')
-            ->assertSee('パスワード');
+        $this->get('/login')->assertOk()->assertSee('メールアドレス')->assertSee('パスワード');
     }
 
     public function test_users_can_login_with_valid_credentials(): void
     {
         $user = User::factory()->create([
             'email' => 'taro@example.com',
-            'password' => Hash::make('secret'),
+            'password' => Hash::make('secret123'),
         ]);
 
-        $this->post('/login', [
-            'email' => 'taro@example.com',
-            'password' => 'secret',
-        ])->assertRedirect('/');
+        $this->post('/login', ['email' => 'taro@example.com', 'password' => 'secret123'])
+            ->assertRedirect('/');
 
         $this->assertAuthenticatedAs($user);
     }
@@ -111,14 +100,13 @@ class UserManagementTest extends TestCase
     {
         User::factory()->create([
             'email' => 'taro@example.com',
-            'password' => Hash::make('secret'),
+            'password' => Hash::make('secret123'),
         ]);
 
         $this->from('/login')->post('/login', [
             'email' => 'taro@example.com',
             'password' => 'wrong-password',
-        ])->assertRedirect('/login')
-            ->assertSessionHasErrors('email');
+        ])->assertRedirect('/login')->assertSessionHasErrors('email');
 
         $this->assertGuest();
     }
@@ -127,7 +115,7 @@ class UserManagementTest extends TestCase
     {
         User::factory()->create([
             'email' => 'taro@example.com',
-            'password' => Hash::make('secret'),
+            'password' => Hash::make('secret123'),
         ]);
 
         $response = $this->from('/login')->post('/login', [
@@ -135,38 +123,29 @@ class UserManagementTest extends TestCase
             'password' => 'wrong-password',
         ]);
 
-        $this->followRedirects($response)
-            ->assertSee('メールアドレスまたはパスワードが正しくありません。');
+        $this->followRedirects($response)->assertSee('メールアドレスまたはパスワードが正しくありません。');
     }
 
     public function test_users_can_logout(): void
     {
         $user = User::factory()->create();
-
-        $this->actingAs($user)->post('/logout')
-            ->assertRedirect('/');
-
+        $this->actingAs($user)->post('/logout')->assertRedirect('/');
         $this->assertGuest();
     }
 
     public function test_guests_are_redirected_to_login_when_accessing_authenticated_screen(): void
     {
-        $this->get('/books/create')
-            ->assertRedirect('/login');
+        $this->get('/books/create')->assertRedirect('/login');
     }
 
     public function test_authenticated_users_are_redirected_home_from_login(): void
     {
-        $this->actingAs(User::factory()->create())
-            ->get('/login')
-            ->assertRedirect('/');
+        $this->actingAs(User::factory()->create())->get('/login')->assertRedirect('/');
     }
 
     public function test_authenticated_users_are_redirected_home_from_register(): void
     {
-        $this->actingAs(User::factory()->create())
-            ->get('/register')
-            ->assertRedirect('/');
+        $this->actingAs(User::factory()->create())->get('/register')->assertRedirect('/');
     }
 
     public function test_password_is_stored_hashed(): void
@@ -174,13 +153,13 @@ class UserManagementTest extends TestCase
         $this->post('/register', [
             'name' => '山田 太郎',
             'email' => 'taro@example.com',
-            'password' => 'secret',
-            'password_confirmation' => 'secret',
+            'password' => 'secret123',
+            'password_confirmation' => 'secret123',
         ]);
 
         $password = User::where('email', 'taro@example.com')->value('password');
 
-        $this->assertNotSame('secret', $password);
-        $this->assertTrue(Hash::check('secret', $password));
+        $this->assertNotSame('secret123', $password);
+        $this->assertTrue(Hash::check('secret123', $password));
     }
 }

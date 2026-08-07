@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\Genre;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
@@ -13,12 +12,10 @@ class IsbnSearchTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_authenticated_user_can_search_and_see_google_books_data_in_registration_form(): void
+    public function test_authenticated_user_can_search_by_isbn_and_receive_json(): void
     {
-        $this->createGenre();
         Http::fake([
             'https://www.googleapis.com/books/v1/volumes*' => Http::response([
-                'totalItems' => 1,
                 'items' => [[
                     'volumeInfo' => [
                         'title' => '検索された本',
@@ -26,107 +23,80 @@ class IsbnSearchTest extends TestCase
                         'publishedDate' => '2020-04-01',
                         'description' => '本の説明',
                         'imageLinks' => ['thumbnail' => 'https://example.test/cover.jpg'],
-                        'categories' => ['文学'],
                     ],
                 ]],
             ]),
         ]);
 
-        $response = $this->actingAs(User::factory()->create())
-            ->get(route('books.isbn-search', ['isbn' => '978-0 306-40615-7']));
-
-        $response->assertOk()
-            ->assertSee('検索された本')
-            ->assertSee('著者A, 著者B')
-            ->assertSee('2020-04-01')
-            ->assertSee('本の説明')
-            ->assertSee('https://example.test/cover.jpg')
-            ->assertSee('9780306406157');
-        Http::assertSent(fn ($request): bool => $request->url() === 'https://www.googleapis.com/books/v1/volumes?q=isbn%3A9780306406157');
+        $this->actingAs($this->createUser())
+            ->getJson('/books/isbn/9780306406157')
+            ->assertOk()
+            ->assertJson([
+                'title' => '検索された本',
+                'author' => '著者A, 著者B',
+                'published_date' => '2020-04-01',
+                'description' => '本の説明',
+                'image_url' => 'https://example.test/cover.jpg',
+                'isbn' => '9780306406157',
+            ]);
     }
 
-    public function test_invalid_isbn_does_not_call_external_api(): void
+    public function test_isbn_must_be_thirteen_digits(): void
     {
         Http::fake();
 
-        $response = $this->actingAs(User::factory()->create())
-            ->get(route('books.isbn-search', ['isbn' => '9780306406158']));
+        $this->actingAs($this->createUser())
+            ->getJson('/books/isbn/978030640615')
+            ->assertStatus(400)
+            ->assertJson(['error' => 'ISBNは13桁で入力してください。']);
 
-        $response->assertRedirect()
-            ->assertSessionHasErrors(['isbn' => 'ISBNは正しいISBN-10またはISBN-13で入力してください。']);
         Http::assertNothingSent();
     }
 
     public function test_guests_are_redirected_to_login_for_isbn_search(): void
     {
-        $this->get(route('books.isbn-search', ['isbn' => '9780306406157']))
-            ->assertRedirect('/login');
+        $this->get('/books/isbn/9780306406157')->assertRedirect('/login');
     }
 
-    public function test_it_handles_no_results(): void
+    public function test_empty_results_return_not_found(): void
     {
-        Http::fake(['*' => Http::response(['totalItems' => 0, 'items' => []])]);
+        Http::fake(['*' => Http::response(['items' => []])]);
 
-        $this->actingAs(User::factory()->create())
-            ->get(route('books.isbn-search', ['isbn' => '9780306406157']))
-            ->assertOk()
-            ->assertSee('ISBNに該当する書籍情報が見つかりません。')
-            ->assertSee('9780306406157');
+        $this->actingAs($this->createUser())
+            ->getJson('/books/isbn/9780306406157')
+            ->assertStatus(404)
+            ->assertJson(['error' => '書籍が見つかりませんでした。']);
     }
 
-    public function test_it_handles_abnormal_responses(): void
+    public function test_quota_exceeded_returns_too_many_requests(): void
     {
-        Http::fake(['*' => Http::response(['unexpected' => true])]);
+        Http::fake(['*' => Http::response([], 429)]);
 
-        $this->actingAs(User::factory()->create())
-            ->get(route('books.isbn-search', ['isbn' => '9780306406157']))
-            ->assertOk()
-            ->assertSee('書籍情報を取得できませんでした。時間をおいて再度お試しください。');
+        $this->actingAs($this->createUser())
+            ->getJson('/books/isbn/9780306406157')
+            ->assertStatus(429)
+            ->assertJson(['error' => 'Google Books API のクォータを超過しました。.env に GOOGLE_BOOKS_API_KEY を設定してください。']);
     }
 
-    public function test_it_handles_external_api_error_status(): void
+    public function test_api_failures_return_internal_server_error(): void
     {
-        Http::fake(['*' => Http::response(['error' => 'server error'], 500)]);
+        Http::fake(['*' => Http::response([], 500)]);
 
-        $this->actingAs(User::factory()->create())
-            ->get(route('books.isbn-search', ['isbn' => '9780306406157']))
-            ->assertOk()
-            ->assertSee('書籍情報を取得できませんでした。時間をおいて再度お試しください。');
+        $this->actingAs($this->createUser())
+            ->getJson('/books/isbn/9780306406157')
+            ->assertStatus(500)
+            ->assertJson(['error' => 'API通信エラーが発生しました。']);
+
+        Http::fake(['*' => static fn (): never => throw new ConnectionException('connection failed')]);
+
+        $this->actingAs($this->createUser())
+            ->getJson('/books/isbn/9780306406157')
+            ->assertStatus(500)
+            ->assertJson(['error' => 'API通信エラーが発生しました。']);
     }
 
-    /** @dataProvider unavailableResponseProvider */
-    public function test_it_handles_external_api_connection_failures(callable $failure): void
+    private function createUser(): User
     {
-        Http::fake(['*' => $failure]);
-
-        $this->actingAs(User::factory()->create())
-            ->get(route('books.isbn-search', ['isbn' => '9780306406157']))
-            ->assertOk()
-            ->assertSee('書籍情報サービスに接続できませんでした。時間をおいて再度お試しください。');
-    }
-
-    public static function unavailableResponseProvider(): array
-    {
-        return [
-            'connection failure' => [static fn (): never => throw new ConnectionException('connection failed')],
-            'timeout' => [static fn (): never => throw new ConnectionException('timeout')],
-        ];
-    }
-
-    public function test_missing_optional_google_books_fields_are_empty(): void
-    {
-        Http::fake(['*' => Http::response(['items' => [['volumeInfo' => ['title' => 'タイトル']]]])]);
-
-        $this->actingAs(User::factory()->create())
-            ->get(route('books.isbn-search', ['isbn' => '9780306406157']))
-            ->assertOk()
-            ->assertSee('タイトル')
-            ->assertSee('name="author"', false)
-            ->assertSee('name="description"', false);
-    }
-
-    private function createGenre(): Genre
-    {
-        return Genre::create(['name' => '文学']);
+        return User::factory()->create();
     }
 }

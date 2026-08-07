@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Rules\ValidIsbn;
 use Illuminate\Foundation\Http\FormRequest;
 
 class IsbnSearchRequest extends FormRequest
@@ -21,22 +20,18 @@ class IsbnSearchRequest extends FormRequest
      * 検証前にISBN入力の前後の空白を除去してリクエストへ再設定する。
      * 戻り値はない。
      */
-    protected function prepareForValidation(): void
-    {
-        $this->merge(['isbn' => trim((string) $this->input('isbn', ''))]);
-    }
-
     public function rules(): array
     {
         return [
-            'isbn' => ['required', new ValidIsbn],
+            'isbn' => ['required', 'digits:13'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'isbn.required' => 'ISBNは正しいISBN-10またはISBN-13で入力してください。',
+            'isbn.required' => 'ISBNは13桁で入力してください。',
+            'isbn.digits' => 'ISBNは13桁で入力してください。',
         ];
     }
 }

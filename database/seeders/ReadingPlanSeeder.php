@@ -35,27 +35,30 @@ class ReadingPlanSeeder extends Seeder
             $user = User::where('email', $email)->firstOrFail();
             $book = Book::where('isbn', $isbn)->firstOrFail();
 
-            ReadingPlan::updateOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'book_id' => $book->id,
-                ],
-                [
-                    'target_date' => $today->copy()->addDays($targetOffset)->toDateString(),
-                    'status' => $status,
-                    'completed_at' => $completedOffset === null
-                        ? null
-                        : $today->copy()->addDays($completedOffset)->startOfDay(),
-                    'expired_at' => $expiredOffset === null
-                        ? null
-                        : $today->copy()->addDays($expiredOffset)->startOfDay(),
-                    'reminded_three_days_at' => null,
-                    'reminded_due_at' => null,
-                    'reminded_overdue_at' => null,
-                    'created_at' => $createdAt,
-                    'updated_at' => $updatedAt,
-                ],
-            );
+            if (ReadingPlan::query()
+                ->where('user_id', $user->id)
+                ->where('book_id', $book->id)
+                ->exists()) {
+                continue;
+            }
+
+            ReadingPlan::create([
+                'user_id' => $user->id,
+                'book_id' => $book->id,
+                'target_date' => $today->copy()->addDays($targetOffset)->toDateString(),
+                'status' => $status,
+                'completed_at' => $completedOffset === null
+                    ? null
+                    : $today->copy()->addDays($completedOffset)->startOfDay(),
+                'expired_at' => $expiredOffset === null
+                    ? null
+                    : $today->copy()->addDays($expiredOffset)->startOfDay(),
+                'reminded_three_days_at' => null,
+                'reminded_due_at' => null,
+                'reminded_overdue_at' => null,
+                'created_at' => $createdAt,
+                'updated_at' => $updatedAt,
+            ]);
         }
     }
 }
