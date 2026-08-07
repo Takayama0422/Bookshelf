@@ -34,7 +34,7 @@ class ReadingReportService
 
         /** @var Collection<int, ReadingPlan> $completedPlans */
         $completedPlans = $user->readingPlans()
-            ->where('status', ReadingPlanStatus::COMPLETED->value)
+            ->where('status', ReadingPlanStatus::Completed->value)
             ->get(['book_id']);
 
         $averageRating = $reviews->avg('rating');

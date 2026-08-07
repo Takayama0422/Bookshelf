@@ -80,8 +80,8 @@ class GenreManagementTest extends TestCase
             ->post(route('genres.store'), ['name' => '新ジャンル']);
 
         $genre = Genre::firstOrFail();
-        $response->assertRedirect(route('genres.show', $genre))
-            ->assertSessionHas('success', 'ジャンルを登録しました。');
+        $response->assertRedirect(route('genres.index'))
+            ->assertSessionHas('success', 'ジャンルを作成しました。');
 
         $this->assertDatabaseHas('genres', ['name' => '新ジャンル']);
     }
@@ -98,16 +98,16 @@ class GenreManagementTest extends TestCase
             ->assertSessionHasErrors('name');
 
         $this->followRedirects($duplicateResponse)
-            ->assertSee('このジャンル名はすでに登録されています。');
+            ->assertSee('そのジャンル名は既に使用されています。');
 
         $tooLongResponse = $this->actingAs($user)
             ->from(route('genres.create'))
-            ->post(route('genres.store'), ['name' => str_repeat('あ', 51)])
+            ->post(route('genres.store'), ['name' => str_repeat('あ', 256)])
             ->assertRedirect(route('genres.create'))
             ->assertSessionHasErrors('name');
 
         $this->followRedirects($tooLongResponse)
-            ->assertSee('ジャンル名は50文字以内で入力してください。');
+            ->assertSee('ジャンル名は255文字以内で入力してください。');
     }
 
     public function test_authenticated_users_can_update_genres(): void
@@ -144,7 +144,7 @@ class GenreManagementTest extends TestCase
             ->assertSessionHasErrors('name');
 
         $this->followRedirects($response)
-            ->assertSee('このジャンル名はすでに登録されています。');
+            ->assertSee('そのジャンル名は既に使用されています。');
     }
 
     public function test_unused_genres_can_be_deleted(): void

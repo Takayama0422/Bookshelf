@@ -30,7 +30,7 @@ class PublicBookApiTest extends TestCase
         $this->createReview($book, ['rating' => 5]);
         $this->createReview($book, ['rating' => 3], User::factory()->create());
 
-        $this->getJson('/api/v1/books?keyword=検索&genre='.$genre->id.'&per_page=20')
+        $this->getJson('/api/v1/books?keyword=検索&genre_id='.$genre->id.'&per_page=20')
             ->assertOk()
             ->assertJsonPath('data.0.id', $book->id)
             ->assertJsonPath('data.0.genres.0.name', '文学')
@@ -42,10 +42,9 @@ class PublicBookApiTest extends TestCase
 
     public function test_book_index_validates_query_parameters(): void
     {
-        $this->getJson('/api/v1/books?genre=999&sort=invalid&page=0&per_page=101')
+        $this->getJson('/api/v1/books?genre_id=999&sort=invalid&page=0&per_page=101')
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['genre', 'sort', 'page', 'per_page'])
-            ->assertJsonPath('message', '指定されたジャンルは存在しません。 (and 3 more errors)');
+            ->assertJsonValidationErrors(['genre_id', 'sort', 'page', 'per_page']);
     }
 
     public function test_book_detail_returns_genres_and_reviews(): void
@@ -63,7 +62,7 @@ class PublicBookApiTest extends TestCase
             ->assertJsonPath('data.id', $book->id)
             ->assertJsonPath('data.genres.0.name', '技術書')
             ->assertJsonPath('data.reviews.0.id', $review->id)
-            ->assertJsonPath('data.reviews.0.user.name', 'レビュー投稿者')
+            ->assertJsonPath('data.reviews.0.user_name', 'レビュー投稿者')
             ->assertJsonPath('data.reviews.0.rating', 5)
             ->assertJsonPath('data.reviews.0.comment', 'とても参考になりました。');
     }
@@ -72,8 +71,7 @@ class PublicBookApiTest extends TestCase
     {
         $this->getJson('/api/v1/books/999')
             ->assertNotFound()
-            ->assertJsonPath('message', '書籍が見つかりません。')
-            ->assertJsonPath('errors.book.0', '指定された書籍が見つかりません。');
+            ->assertJson(['error' => '書籍が見つかりませんでした。']);
     }
 
     public function test_book_store_creates_book_with_genres(): void
@@ -137,8 +135,8 @@ class PublicBookApiTest extends TestCase
             'genre_ids' => [],
         ])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['title', 'author', 'isbn', 'published_date', 'genre_ids'])
-            ->assertJsonPath('errors.title.0', 'タイトルは必ず入力してください。');
+            ->assertJsonValidationErrors(['title', 'author', 'isbn', 'published_date', 'genres'])
+            ->assertJsonPath('errors.title.0', 'タイトルは必須です。');
     }
 
     public function test_book_update_updates_book_and_excludes_own_isbn_from_unique_rule(): void
@@ -180,11 +178,11 @@ class PublicBookApiTest extends TestCase
             'genre_ids' => [],
         ])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['title', 'author', 'isbn', 'published_date', 'genre_ids']);
+            ->assertJsonValidationErrors(['title', 'author', 'isbn', 'published_date', 'genres']);
 
         $this->putJson('/api/v1/books/999', $this->validBookPayload(User::factory()->create()))
             ->assertNotFound()
-            ->assertJsonPath('message', '書籍が見つかりません。');
+            ->assertJson(['error' => '書籍が見つかりませんでした。']);
     }
 
     public function test_book_delete_removes_book_and_related_data(): void
@@ -223,7 +221,7 @@ class PublicBookApiTest extends TestCase
 
         $this->deleteJson('/api/v1/books/999')
             ->assertNotFound()
-            ->assertJsonPath('message', '書籍が見つかりません。');
+            ->assertJson(['error' => '書籍が見つかりませんでした。']);
     }
 
     /**

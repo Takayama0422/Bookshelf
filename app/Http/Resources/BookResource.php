@@ -23,13 +23,11 @@ class BookResource extends JsonResource
             'image_url' => $this->image_url,
             'average_rating' => $this->when(
                 array_key_exists('reviews_avg_rating', $this->resource->getAttributes()),
-                fn () => $this->reviews_avg_rating === null ? null : round((float) $this->reviews_avg_rating, 2)
+                fn () => $this->reviews_avg_rating === null ? null : round((float) $this->reviews_avg_rating, 1)
             ),
-            'review_count' => $this->whenCounted('reviews'),
+            'review_count' => (int) ($this->reviews_count ?? 0),
             'genres' => GenreResource::collection($this->whenLoaded('genres')),
             'reviews' => ReviewResource::collection($this->whenLoaded('reviews')),
-            'created_at' => $this->created_at?->toJSON(),
-            'updated_at' => $this->updated_at?->toJSON(),
         ];
     }
 }

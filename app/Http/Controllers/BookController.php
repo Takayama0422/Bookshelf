@@ -5,16 +5,18 @@ namespace App\Http\Controllers;
 use App\Exceptions\IsbnApiResponseException;
 use App\Exceptions\IsbnApiUnavailableException;
 use App\Exceptions\IsbnBookNotFoundException;
+use App\Exceptions\IsbnQuotaExceededException;
 use App\Http\Requests\IndexBookRequest;
-use App\Http\Requests\IsbnSearchRequest;
 use App\Http\Requests\StoreBookRequest;
 use App\Http\Requests\UpdateBookRequest;
 use App\Models\Book;
 use App\Models\Genre;
 use App\Services\GoogleBooksService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use InvalidArgumentException;
 
 class BookController extends Controller
 {
@@ -82,30 +84,35 @@ class BookController extends Controller
      * ISBNを使用してGoogle Books APIから書籍情報を検索し、書籍登録画面へ反映する。
      *
      * API上で書籍が見つからない場合や通信・レスポンス異常の場合は、
-     * 例外を利用者向けメッセージへ変換した書籍登録画面を返す。
+     * 例外を利用者向けメッセージへ変換したJSONレスポンスを返す。
      *
-     * @param  IsbnSearchRequest  $request  検証済みのISBNを保持するリクエスト
+     * @param  string  $isbn  検索対象のISBN-13
      * @param  GoogleBooksService  $googleBooks  Google Books API検索サービス
-     * @return View 検索結果またはエラーメッセージを含む書籍登録画面
+     * @return JsonResponse 検索結果または日本語エラーを含むJSONレスポンス
      */
-    public function isbnSearch(IsbnSearchRequest $request, GoogleBooksService $googleBooks): View
+    public function searchByIsbn(string $isbn, GoogleBooksService $googleBooks): JsonResponse
     {
-        $genres = Genre::query()->orderBy('id')->get();
-
-        try {
-            $bookData = $googleBooks->search($request->validated('isbn'));
-        } catch (IsbnBookNotFoundException) {
-            return view('books.create', ['genres' => $genres, 'bookData' => []])
-                ->with('error', 'ISBNに該当する書籍情報が見つかりません。');
-        } catch (IsbnApiUnavailableException) {
-            return view('books.create', ['genres' => $genres, 'bookData' => []])
-                ->with('error', '書籍情報サービスに接続できませんでした。時間をおいて再度お試しください。');
-        } catch (IsbnApiResponseException) {
-            return view('books.create', ['genres' => $genres, 'bookData' => []])
-                ->with('error', '書籍情報を取得できませんでした。時間をおいて再度お試しください。');
+        if (preg_match('/^\d{13}$/', $isbn) !== 1) {
+            return response()->json(['error' => 'ISBNは13桁で入力してください。'], 400);
         }
 
-        return view('books.create', compact('genres', 'bookData'));
+        try {
+            $bookData = $googleBooks->search($isbn);
+        } catch (InvalidArgumentException) {
+            return response()->json(['error' => 'ISBNは13桁で入力してください。'], 400);
+        } catch (IsbnBookNotFoundException) {
+            return response()->json(['error' => '書籍が見つかりませんでした。'], 404);
+        } catch (IsbnQuotaExceededException) {
+            return response()->json([
+                'error' => 'Google Books API のクォータを超過しました。.env に GOOGLE_BOOKS_API_KEY を設定してください。',
+            ], 429);
+        } catch (IsbnApiUnavailableException) {
+            return response()->json(['error' => 'API通信エラーが発生しました。'], 500);
+        } catch (IsbnApiResponseException) {
+            return response()->json(['error' => 'API通信エラーが発生しました。'], 500);
+        }
+
+        return response()->json($bookData);
     }
 
     public function store(StoreBookRequest $request): RedirectResponse

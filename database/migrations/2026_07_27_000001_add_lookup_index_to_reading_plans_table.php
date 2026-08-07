@@ -9,14 +9,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('reading_plans', function (Blueprint $table) {
-            $table->index(['user_id', 'book_id', 'status'], 'reading_plans_user_book_status_index');
+            $table->index(['user_id', 'status'], 'reading_plans_user_status_index');
+            $table->index('target_date', 'reading_plans_target_date_index');
         });
     }
 
     public function down(): void
     {
         Schema::table('reading_plans', function (Blueprint $table) {
-            $table->dropIndex('reading_plans_user_book_status_index');
+            $table->dropIndex('reading_plans_user_status_index');
+            $table->dropIndex('reading_plans_target_date_index');
         });
     }
 };

@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('book_id')->constrained()->cascadeOnDelete();
             $table->date('target_date');
-            $table->string('status', 20);
+            $table->string('status', 20)->default('in_progress');
             $table->timestamp('completed_at')->nullable();
             $table->timestamp('expired_at')->nullable();
             $table->timestamp('reminded_three_days_at')->nullable();

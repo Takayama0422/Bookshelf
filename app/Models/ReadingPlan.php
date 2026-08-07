@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ReadingPlanStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -55,9 +56,9 @@ class ReadingPlan extends Model
     public static function statuses(): array
     {
         return [
-            ReadingPlanStatus::IN_PROGRESS->value => ReadingPlanStatus::IN_PROGRESS->label(),
-            ReadingPlanStatus::COMPLETED->value => ReadingPlanStatus::COMPLETED->label(),
-            ReadingPlanStatus::EXPIRED->value => ReadingPlanStatus::EXPIRED->label(),
+            ReadingPlanStatus::InProgress->value => ReadingPlanStatus::InProgress->label(),
+            ReadingPlanStatus::Completed->value => ReadingPlanStatus::Completed->label(),
+            ReadingPlanStatus::Expired->value => ReadingPlanStatus::Expired->label(),
         ];
     }
 
@@ -74,5 +75,38 @@ class ReadingPlan extends Model
         return $this->status instanceof ReadingPlanStatus
             ? $this->status->label()
             : (string) $this->status;
+    }
+
+    /**
+     * 進行中の読書計画だけを取得する。
+     *
+     * @param  Builder<ReadingPlan>  $query  読書計画クエリ
+     * @return Builder<ReadingPlan> 絞り込み済みクエリ
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', ReadingPlanStatus::InProgress);
+    }
+
+    /**
+     * 完了済みの読書計画だけを取得する。
+     *
+     * @param  Builder<ReadingPlan>  $query  読書計画クエリ
+     * @return Builder<ReadingPlan> 絞り込み済みクエリ
+     */
+    public function scopeCompleted(Builder $query): Builder
+    {
+        return $query->where('status', ReadingPlanStatus::Completed);
+    }
+
+    /**
+     * 期限切れの読書計画だけを取得する。
+     *
+     * @param  Builder<ReadingPlan>  $query  読書計画クエリ
+     * @return Builder<ReadingPlan> 絞り込み済みクエリ
+     */
+    public function scopeExpired(Builder $query): Builder
+    {
+        return $query->where('status', ReadingPlanStatus::Expired);
     }
 }

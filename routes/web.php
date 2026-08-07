@@ -26,7 +26,7 @@ Route::get('/books', [BookController::class, 'index'])->name('books.index');
 
 Route::middleware('auth')->group(function () {
     Route::get('/books/create', [BookController::class, 'create'])->name('books.create');
-    Route::get('/books/isbn-search', [BookController::class, 'isbnSearch'])->name('books.isbn-search');
+    Route::get('/books/isbn/{isbn}', [BookController::class, 'searchByIsbn'])->name('books.isbn');
     Route::post('/books', [BookController::class, 'store'])->name('books.store');
     Route::get('/books/{book}/edit', [BookController::class, 'edit'])->name('books.edit');
     Route::put('/books/{book}', [BookController::class, 'update'])->name('books.update');
@@ -38,7 +38,7 @@ Route::get('/books/{book}', [BookController::class, 'show'])->name('books.show')
 Route::middleware('auth')->group(function () {
     Route::get('/reports', ReadingReportController::class)->name('reading-report.show');
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/reading-plans/{reading_plan}/complete', [ReadingPlanController::class, 'complete'])->name('reading-plans.complete');
     Route::resource('reading-plans', ReadingPlanController::class)->except('show');
     Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');

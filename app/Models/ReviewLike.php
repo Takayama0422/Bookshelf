@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class ReviewLike extends Pivot
 {
-    public $incrementing = false;
+    public $incrementing = true;
 
     public $timestamps = false;
 

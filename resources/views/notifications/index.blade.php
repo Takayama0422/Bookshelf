@@ -25,6 +25,7 @@
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状態</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">通知内容</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">通知種別</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">書籍タイトル</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">読書計画ID</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">通知日時</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
@@ -34,12 +35,10 @@
                                     @foreach($notifications as $notification)
                                         @php
                                             $data = $notification->data ?? [];
-                                            $message = data_get($data, 'message')
-                                                ?? data_get($data, 'title')
-                                                ?? data_get($data, 'body')
-                                                ?? data_get($data, 'content')
-                                                ?? '通知内容はありません。';
-                                            $notificationType = data_get($data, 'notification_type') ?? data_get($data, 'type');
+                                            $title = data_get($data, 'title') ?? '通知';
+                                            $body = data_get($data, 'body', '通知内容はありません。');
+                                            $timing = data_get($data, 'timing');
+                                            $bookTitle = data_get($data, 'book_title');
                                             $planId = data_get($data, 'plan_id');
                                         @endphp
                                         <tr class="{{ $notification->unread() ? 'bg-blue-50' : '' }}">
@@ -50,8 +49,9 @@
                                                     <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-700">既読</span>
                                                 @endif
                                             </td>
-                                            <td class="px-6 py-4">{{ $message }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">{{ $notificationType ?? '-' }}</td>
+                                            <td class="px-6 py-4"><p class="font-semibold">{{ $title }}</p><p>{{ $body }}</p></td>
+                                            <td class="px-6 py-4 whitespace-nowrap">{{ $timing ?? '-' }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">{{ $bookTitle ?? '-' }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap">{{ $planId ?? '-' }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap">{{ $notification->created_at->format('Y-m-d H:i') }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm">

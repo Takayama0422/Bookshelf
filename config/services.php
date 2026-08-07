@@ -36,4 +36,8 @@ return [
         'timeout' => (int) env('GOOGLE_BOOKS_API_TIMEOUT', 5),
     ],
 
+    'google' => [
+        'books_api_key' => env('GOOGLE_BOOKS_API_KEY'),
+    ],
+
 ];

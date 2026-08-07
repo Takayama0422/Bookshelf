@@ -30,9 +30,15 @@
                     <x-nav-link :href="route('reading-report.show')" :active="request()->routeIs('reading-report.show')">
                         {{ __('マイ読書レポート') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
-                        {{ __('通知') }}
-                    </x-nav-link>
+                    <a href="{{ route('notifications.index') }}" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none transition duration-150 ease-in-out">
+                        <span aria-hidden="true">🔔</span>
+                        <span class="ml-1">{{ __('通知') }}</span>
+                        @if(Auth::user()?->unreadNotifications()->count() > 0)
+                            <span class="ml-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                                {{ Auth::user()?->unreadNotifications()->count() }}
+                            </span>
+                        @endif
+                    </a>
                     <x-nav-link :href="route('genres.index')" :active="request()->routeIs('genres.*')">
                         {{ __('ジャンル管理') }}
                     </x-nav-link>
@@ -107,7 +113,10 @@
                 {{ __('マイ読書レポート') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('notifications.index')" :active="request()->routeIs('notifications.*')">
-                {{ __('通知') }}
+                <span aria-hidden="true">🔔</span> {{ __('通知') }}
+                @if(Auth::user()?->unreadNotifications()->count() > 0)
+                    <span class="ml-1">({{ Auth::user()?->unreadNotifications()->count() }})</span>
+                @endif
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('genres.index')" :active="request()->routeIs('genres.*')">
                 {{ __('ジャンル管理') }}

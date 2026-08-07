@@ -8,7 +8,7 @@ use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 class Kernel extends ConsoleKernel
 {
     /**
-     * 読書計画処理コマンドを毎日00:00に重複実行なしで登録する。
+     * 読書計画処理コマンドを毎日20:00に登録する。
      *
      * @param  Schedule  $schedule  コマンドスケジュール
      *
@@ -16,9 +16,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('reading-plans:process')
-            ->dailyAt('00:00')
-            ->withoutOverlapping();
+        $schedule->command('reading-plans:run-daily')
+            ->daily()
+            ->at('20:00');
     }
 
     /**

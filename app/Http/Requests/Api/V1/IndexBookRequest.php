@@ -18,11 +18,18 @@ class IndexBookRequest extends FormRequest
     {
         return [
             'keyword' => ['nullable', 'string', 'max:255'],
-            'genre' => ['nullable', 'integer', 'exists:genres,id'],
+            'genre_id' => ['nullable', 'integer', 'exists:genres,id'],
             'sort' => ['nullable', 'string', 'in:latest,oldest,title,rating'],
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (! $this->has('genre_id') && $this->has('genre')) {
+            $this->merge(['genre_id' => $this->input('genre')]);
+        }
     }
 
     /**
@@ -33,8 +40,8 @@ class IndexBookRequest extends FormRequest
         return [
             'keyword.string' => 'キーワードは文字列で入力してください。',
             'keyword.max' => 'キーワードは255文字以内で入力してください。',
-            'genre.integer' => 'ジャンルIDは整数で入力してください。',
-            'genre.exists' => '指定されたジャンルは存在しません。',
+            'genre_id.integer' => 'ジャンルIDは整数で入力してください。',
+            'genre_id.exists' => '指定されたジャンルは存在しません。',
             'sort.in' => '並び順はlatest、oldest、title、ratingのいずれかを指定してください。',
             'page.integer' => 'ページ番号は整数で入力してください。',
             'page.min' => 'ページ番号は1以上で入力してください。',
@@ -51,7 +58,7 @@ class IndexBookRequest extends FormRequest
 
     public function genreId(): ?int
     {
-        $genre = $this->validated('genre');
+        $genre = $this->validated('genre_id');
 
         return $genre === null ? null : (int) $genre;
     }

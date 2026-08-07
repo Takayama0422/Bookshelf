@@ -4,7 +4,6 @@ namespace App\Http\Requests;
 
 use App\Models\ReadingPlan;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateReadingPlanRequest extends FormRequest
 {
@@ -24,28 +23,13 @@ class UpdateReadingPlanRequest extends FormRequest
     /**
      * 読書計画の更新ルールを返す。
      *
-     * 対象が進行中の場合は、更新対象自身を除外して同一ユーザー・書籍の重複を検証する。
+     * 編集対象は期日だけに限定する。
      *
      * @return array<string, list<mixed>>
      */
     public function rules(): array
     {
-        $readingPlan = $this->route('reading_plan');
-        $bookRules = [
-            'required',
-            'integer',
-            Rule::exists('books', 'id'),
-        ];
-
-        if ($readingPlan instanceof ReadingPlan && $readingPlan->status === ReadingPlan::STATUS_IN_PROGRESS) {
-            $bookRules[] = Rule::unique('reading_plans', 'book_id')
-                ->where('user_id', $this->user()?->id)
-                ->where('status', ReadingPlan::STATUS_IN_PROGRESS)
-                ->ignore($readingPlan->id);
-        }
-
         return [
-            'book_id' => $bookRules,
             'target_date' => ['required', 'date', 'after_or_equal:today'],
         ];
     }
@@ -56,9 +40,6 @@ class UpdateReadingPlanRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'book_id.required' => '書籍を選択してください。',
-            'book_id.exists' => '指定された書籍は存在しません。',
-            'book_id.unique' => 'この書籍には進行中の読書計画がすでに登録されています。',
             'target_date.required' => '目標読了日を入力してください。',
             'target_date.date' => '目標読了日には有効な日付を指定してください。',
             'target_date.after_or_equal' => '目標読了日には本日以降の日付を指定してください。',
@@ -70,6 +51,6 @@ class UpdateReadingPlanRequest extends FormRequest
      */
     public function readingPlanAttributes(): array
     {
-        return $this->safe()->only(['book_id', 'target_date']);
+        return $this->safe()->only(['target_date']);
     }
 }

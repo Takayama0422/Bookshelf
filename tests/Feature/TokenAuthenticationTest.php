@@ -200,7 +200,7 @@ class TokenAuthenticationTest extends TestCase
 
         $this->putJson('/api/v1/books/999', $this->validBookPayload())
             ->assertNotFound()
-            ->assertJsonPath('message', '書籍が見つかりません。');
+            ->assertJson(['error' => '書籍が見つかりませんでした。']);
 
         $this->putJson('/api/v1/books/'.$book->id, [
             'title' => '',
@@ -210,7 +210,7 @@ class TokenAuthenticationTest extends TestCase
             'genre_ids' => [],
         ])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['title', 'author', 'isbn', 'published_date', 'genre_ids']);
+            ->assertJsonValidationErrors(['title', 'author', 'isbn', 'published_date', 'genres']);
     }
 
     /**

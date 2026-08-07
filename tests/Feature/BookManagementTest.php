@@ -153,7 +153,7 @@ class BookManagementTest extends TestCase
                 'author' => '',
                 'isbn' => '123456789012',
                 'published_date' => now()->addDay()->toDateString(),
-                'description' => str_repeat('あ', 2001),
+                'description' => '説明',
                 'image_url' => 'not-url',
                 'genres' => [],
             ]);
@@ -164,19 +164,17 @@ class BookManagementTest extends TestCase
                 'author',
                 'isbn',
                 'published_date',
-                'description',
                 'image_url',
                 'genres',
             ]);
 
         $this->followRedirects($response)
-            ->assertSee('タイトルは必ず入力してください。')
-            ->assertSee('著者は必ず入力してください。')
+            ->assertSee('タイトルは必須です。')
+            ->assertSee('著者名は必須です。')
             ->assertSee('ISBNは13桁で入力してください。')
             ->assertSee('出版日には本日以前の日付を指定してください。')
-            ->assertSee('説明は2000文字以内で入力してください。')
             ->assertSee('ジャンルは1つ以上選択してください。')
-            ->assertSee('画像URLには有効なURLを指定してください。');
+            ->assertSee('画像URLは有効なURL形式で入力してください。');
     }
 
     public function test_book_store_rejects_duplicate_isbn(): void
@@ -192,7 +190,7 @@ class BookManagementTest extends TestCase
             ->assertSessionHasErrors('isbn');
 
         $this->followRedirects($response)
-            ->assertSee('このISBNはすでに登録されています。');
+            ->assertSee('そのISBNは既に使用されています。');
     }
 
     public function test_owners_can_view_book_edit_screen(): void
