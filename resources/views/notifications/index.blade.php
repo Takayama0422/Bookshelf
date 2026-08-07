@@ -36,8 +36,8 @@
                                         @php
                                             $data = $notification->data ?? [];
                                             $title = data_get($data, 'title') ?? '通知';
-                                            $body = data_get($data, 'body') ?? data_get($data, 'message') ?? '通知内容はありません。';
-                                            $timing = data_get($data, 'timing') ?? data_get($data, 'notification_type');
+                                            $body = data_get($data, 'body', '通知内容はありません。');
+                                            $timing = data_get($data, 'timing');
                                             $bookTitle = data_get($data, 'book_title');
                                             $planId = data_get($data, 'plan_id');
                                         @endphp

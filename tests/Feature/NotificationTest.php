@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Notifications\PlanReminderNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Carbon;
@@ -17,8 +18,10 @@ class NotificationTest extends TestCase
     {
         $user = User::factory()->create();
         $notification = $this->createNotification($user, [
-            'message' => '読書計画の期限が近づいています。',
-            'notification_type' => 'due_soon',
+            'title' => '読書計画リマインド',
+            'body' => '読書計画の期限が近づいています。',
+            'timing' => 'three_days_before',
+            'book_title' => '通知対象書籍',
             'plan_id' => 123,
         ]);
 
@@ -27,7 +30,7 @@ class NotificationTest extends TestCase
             ->assertOk()
             ->assertSee('通知一覧')
             ->assertSee('読書計画の期限が近づいています。')
-            ->assertSee('due_soon')
+            ->assertSee('three_days_before')
             ->assertSee('123')
             ->assertSee(route('notifications.read', $notification), false);
 
@@ -48,8 +51,8 @@ class NotificationTest extends TestCase
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
 
-        $this->createNotification($user, ['message' => '自分宛ての通知']);
-        $this->createNotification($otherUser, ['message' => '他ユーザー宛ての通知']);
+        $this->createNotification($user, ['body' => '自分宛ての通知']);
+        $this->createNotification($otherUser, ['body' => '他ユーザー宛ての通知']);
 
         $this->actingAs($user)
             ->get(route('notifications.index'))
@@ -62,8 +65,8 @@ class NotificationTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->createNotification($user, ['message' => '未読の通知'], ['read_at' => null]);
-        $this->createNotification($user, ['message' => '既読の通知'], ['read_at' => now()]);
+        $this->createNotification($user, ['body' => '未読の通知'], ['read_at' => null]);
+        $this->createNotification($user, ['body' => '既読の通知'], ['read_at' => now()]);
 
         $this->actingAs($user)
             ->get(route('notifications.index'))
@@ -81,7 +84,7 @@ class NotificationTest extends TestCase
         Carbon::setTestNow('2026-07-27 10:00:00');
 
         $user = User::factory()->create();
-        $notification = $this->createNotification($user, ['message' => '既読化する通知']);
+        $notification = $this->createNotification($user, ['body' => '既読化する通知']);
 
         $this->actingAs($user)
             ->post(route('notifications.read', $notification))
@@ -99,7 +102,7 @@ class NotificationTest extends TestCase
     {
         $user = User::factory()->create();
         $readAt = Carbon::parse('2026-07-27 09:00:00');
-        $notification = $this->createNotification($user, ['message' => '既読済み通知'], [
+        $notification = $this->createNotification($user, ['body' => '既読済み通知'], [
             'read_at' => $readAt,
         ]);
 
@@ -116,7 +119,7 @@ class NotificationTest extends TestCase
     {
         $owner = User::factory()->create();
         $otherUser = User::factory()->create();
-        $notification = $this->createNotification($owner, ['message' => '他ユーザーの通知']);
+        $notification = $this->createNotification($owner, ['body' => '他ユーザーの通知']);
 
         $this->actingAs($otherUser)
             ->post(route('notifications.read', $notification))
@@ -159,7 +162,7 @@ class NotificationTest extends TestCase
         $user = User::factory()->create();
 
         for ($i = 1; $i <= 11; $i++) {
-            $this->createNotification($user, ['message' => sprintf('通知%02d', $i)], [
+            $this->createNotification($user, ['body' => sprintf('通知%02d', $i)], [
                 'created_at' => now()->addMinutes($i),
                 'updated_at' => now()->addMinutes($i),
             ]);
@@ -187,7 +190,7 @@ class NotificationTest extends TestCase
     {
         return DatabaseNotification::query()->create(array_merge([
             'id' => (string) Str::uuid(),
-            'type' => 'App\\Notifications\\ReadingPlanReminderNotification',
+            'type' => PlanReminderNotification::class,
             'notifiable_type' => $user->getMorphClass(),
             'notifiable_id' => $user->id,
             'data' => $data,

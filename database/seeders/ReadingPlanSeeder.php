@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Enums\ReadingPlanStatus;
 use App\Models\Book;
 use App\Models\ReadingPlan;
 use App\Models\User;
@@ -23,12 +24,12 @@ class ReadingPlanSeeder extends Seeder
         $updatedAt = $today->copy()->subDays(7)->startOfDay();
 
         $plans = [
-            ['yamada@example.com', '9784309226712', 3, 'in_progress', null, null],
-            ['suzuki@example.com', '9784822251468', 14, 'in_progress', null, null],
-            ['tanaka@example.com', '9784873115658', -7, 'completed', -2, null],
-            ['sato@example.com', '9784101010014', -3, 'completed', -1, null],
-            ['takahashi@example.com', '9784478025819', -5, 'expired', null, 0],
-            ['yamada@example.com', '9784163902302', -10, 'expired', null, -4],
+            ['yamada@example.com', '9784309226712', 3, ReadingPlanStatus::InProgress->value, null, null],
+            ['yamada@example.com', '9784822251468', 0, ReadingPlanStatus::InProgress->value, null, null],
+            ['yamada@example.com', '9784873115658', -3, ReadingPlanStatus::InProgress->value, null, null],
+            ['yamada@example.com', '9784101010014', 7, ReadingPlanStatus::InProgress->value, null, null],
+            ['yamada@example.com', '9784478025819', -10, ReadingPlanStatus::Completed->value, -5, null],
+            ['suzuki@example.com', '9784163902302', 5, ReadingPlanStatus::InProgress->value, null, null],
         ];
 
         foreach ($plans as [$email, $isbn, $targetOffset, $status, $completedOffset, $expiredOffset]) {

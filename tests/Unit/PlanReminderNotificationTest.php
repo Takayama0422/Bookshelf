@@ -9,11 +9,11 @@ use App\Notifications\PlanReminderNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class ReadingPlanReminderNotificationTest extends TestCase
+class PlanReminderNotificationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_database_payload_contains_minimum_reading_plan_identifiers_and_type(): void
+    public function test_database_payload_contains_the_canonical_reading_plan_fields(): void
     {
         $plan = ReadingPlan::factory()->create([
             'user_id' => User::factory()->create()->id,
@@ -25,6 +25,13 @@ class ReadingPlanReminderNotificationTest extends TestCase
             PlanReminderNotification::TIMING_DUE_TODAY,
         ))->toArray($plan->user);
 
+        $this->assertSame([
+            'plan_id',
+            'book_title',
+            'timing',
+            'title',
+            'body',
+        ], array_keys($payload));
         $this->assertSame($plan->id, $payload['plan_id']);
         $this->assertSame($plan->book->title, $payload['book_title']);
         $this->assertSame(PlanReminderNotification::TIMING_DUE_TODAY, $payload['timing']);
